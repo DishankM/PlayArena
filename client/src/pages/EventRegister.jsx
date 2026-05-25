@@ -5,14 +5,15 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Navbar } from '../components/common/Navbar';
 import { Footer } from '../components/common/Footer';
-import { mockTournaments } from '../data/mockData';
+import { tournamentAPI } from '../services/api';
 import { formatPrice } from '../utils/helpers';
 
 export default function EventRegister() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
-  const tournament = mockTournaments.find((t) => t._id === id);
+  const [tournament, setTournament] = useState(null);
+  const [loadingTournament, setLoadingTournament] = useState(true);
 
   const [playerData, setPlayerData] = useState({
     name: user?.name || '',
@@ -39,7 +40,24 @@ export default function EventRegister() {
     if (!user) {
       navigate('/login', { state: { from: `/events/${id}/register` } });
     }
+    tournamentAPI
+      .get(`/${id}`)
+      .then((res) => setTournament(res.data.data.tournament))
+      .catch(() => setTournament(null))
+      .finally(() => setLoadingTournament(false));
   }, [user, navigate, id]);
+
+  if (loadingTournament) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-arena-navy to-arena-navy-deep">
+        <Navbar />
+        <main className="mx-auto max-w-lg px-6 py-24">
+          <div className="h-80 animate-pulse rounded-2xl bg-white/10" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!tournament) {
     return (
@@ -63,7 +81,7 @@ export default function EventRegister() {
   const isSolo = tournament.format === 'solo';
   const isTeam = tournament.format === 'team' || tournament.format === 'doubles';
   const maxMembers = tournament.format === 'doubles' ? 1 : 7;
-  const userNXLBallance = user?.nxlBalance || 0;
+  const userNXLBallance = user?.nxlCredits || 0;
   const canUseNXL = userNXLBallance >= tournament.entryFee && tournament.entryFee > 0;
   const finalPrice = useNXL && canUseNXL ? 0 : tournament.entryFee;
 
@@ -115,18 +133,26 @@ export default function EventRegister() {
     return Object.keys(next).length === 0;
   };
 
-  const handleConfirmPay = () => {
+  const handleConfirmPay = async () => {
     if (!validate()) return;
     setProcessing(true);
     setStep('processing');
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      const token = `QR-2026-${tournament._id}-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-      setQrToken(token);
-      setProcessing(false);
+
+    try {
+      const res = await tournamentAPI.post(`/${tournament._id}/register`, {
+        type: tournament.format === 'solo' ? 'solo' : 'team',
+        teamData,
+        playerData,
+        paymentMethod,
+      });
+      setQrToken(res.data.data.qrToken);
       setStep('success');
-    }, 2000);
+    } catch (error) {
+      setErrors({ submit: error.message || 'Registration failed. Please try again.' });
+      setStep('form');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleDownloadQR = () => {
@@ -146,7 +172,7 @@ export default function EventRegister() {
     ctx.fillText('PLAYARENA', 100, 200);
     ctx.font = '14px monospace';
     ctx.fillStyle = '#F7C948';
-    ctx.fillText(token, 80, 250);
+    ctx.fillText(qrToken, 80, 250);
     
     const link = document.createElement('a');
     link.download = `qr-${tournament.name.toLowerCase().replace(/\s+/g, '-')}.png`;

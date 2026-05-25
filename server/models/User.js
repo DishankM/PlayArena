@@ -1,3 +1,4 @@
+// server/models/User.js
 import mongoose from 'mongoose'
 
 const userSchema = new mongoose.Schema(
@@ -19,6 +20,8 @@ const userSchema = new mongoose.Schema(
     nxlCredits: { type: Number, default: 0 },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     isActive: { type: Boolean, default: true },
+    passwordResetToken: { type: String },
+    passwordResetExpires: { type: Date },
   },
   { timestamps: true }
 )

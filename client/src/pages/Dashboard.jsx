@@ -1,15 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { Navbar } from '../components/common/Navbar'
 import { Footer } from '../components/common/Footer'
 import { logout } from '../store/slices/authSlice'
-import {
-  mockOrders,
-  mockWalletTransactions,
-  mockRegistrations,
-  mockUser,
-} from '../data/mockData'
+import { orderAPI, tournamentAPI, walletAPI } from '../services/api'
 import {
   formatPrice,
   formatDate,
@@ -38,22 +33,37 @@ const glassCard = 'rounded-2xl border border-white/10 bg-white/[0.04] shadow-xl 
 export default function Dashboard() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const user = useSelector((state) => state.auth.user) || mockUser
+  const user = useSelector((state) => state.auth.user) || {}
   const wallet = useSelector((state) => state.wallet)
+  const [orders, setOrders] = useState([])
+  const [transactions, setTransactions] = useState([])
+  const [registrations, setRegistrations] = useState([])
+  const [walletSummary, setWalletSummary] = useState(null)
 
   const [activeTab, setActiveTab] = useState('overview')
   const [expandedOrder, setExpandedOrder] = useState(null)
   const [qrModalOpen, setQrModalOpen] = useState(false)
   const [qrModalToken, setQrModalToken] = useState('')
   const [profile, setProfile] = useState({
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
+    name: user.name || '',
+    email: user.email || '',
+    phone: user.phone || '',
     ...user.address,
   })
 
-  const walletBalance = wallet.balance || mockUser.walletBalance
-  const nxlCredits = wallet.nxlCredits || mockUser.nxlCredits
+  useEffect(() => {
+    Promise.all([orderAPI.get('/me'), walletAPI.get('/'), tournamentAPI.get('/my-registrations')])
+      .then(([ordersRes, walletRes, regRes]) => {
+        setOrders(ordersRes.data.data.orders || [])
+        setWalletSummary(walletRes.data.data)
+        setTransactions(walletRes.data.data.recentTransactions || [])
+        setRegistrations(regRes.data.data.registrations || [])
+      })
+      .catch(() => {})
+  }, [])
+
+  const walletBalance = walletSummary?.walletBalance ?? wallet.balance ?? 0
+  const nxlCredits = walletSummary?.nxlCredits ?? wallet.nxlCredits ?? 0
   const tier = getNxlTier(nxlCredits)
 
   const handleSignOut = () => {
@@ -70,10 +80,10 @@ export default function Dashboard() {
     <aside className={`${glassCard} w-full shrink-0 p-5 lg:w-[260px]`}>
       <div className="flex items-center gap-3 border-b border-white/10 pb-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-violet-500 text-sm font-bold text-white shadow-lg">
-          {getInitials(user.name)}
+          {getInitials(user.name || 'User')}
         </div>
         <div className="min-w-0">
-          <p className="truncate font-semibold text-white">{user.name}</p>
+          <p className="truncate font-semibold text-white">{user.name || 'User'}</p>
           <p className="truncate text-xs text-gray-400">{user.email}</p>
         </div>
       </div>
@@ -109,7 +119,7 @@ export default function Dashboard() {
     <>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-white">
-          Welcome back, {user.name.split(' ')[0]} 👋
+          Welcome back, {(user.name || 'User').split(' ')[0]}
         </h2>
         <p className="text-sm text-gray-400">
           {new Date().toLocaleDateString('en-IN', {
@@ -138,13 +148,13 @@ export default function Dashboard() {
           },
           {
             label: 'Total Orders',
-            value: String(mockOrders.length),
+            value: String(orders.length),
             icon: 'ti-shopping-bag',
             iconBg: 'from-sky-500/20 to-sky-600/20 text-sky-400',
           },
           {
             label: 'Tournaments',
-            value: String(mockRegistrations.length),
+            value: String(registrations.length),
             icon: 'ti-trophy',
             iconBg: 'from-violet-500/20 to-violet-600/20 text-violet-400',
           },
@@ -164,7 +174,7 @@ export default function Dashboard() {
         <div>
           <h3 className="text-lg font-semibold text-white">Recent Orders</h3>
           <div className="mt-3 space-y-3">
-            {mockOrders.slice(0, 2).map((order) => (
+            {orders.slice(0, 2).map((order) => (
               <div key={order._id} className={`${glassCard} p-4`}>
                 <div className="flex justify-between text-sm">
                   <span className="font-medium text-sky-400">#{order._id.toUpperCase()}</span>
@@ -182,7 +192,7 @@ export default function Dashboard() {
         <div>
           <h3 className="text-lg font-semibold text-white">Recent NXL Activity</h3>
           <div className="mt-3 space-y-3">
-            {mockWalletTransactions.slice(0, 3).map((tx) => (
+            {transactions.slice(0, 3).map((tx) => (
               <div key={tx._id} className={`${glassCard} flex justify-between p-4 text-sm`}>
                 <div>
                   <p className="font-medium text-white">{tx.description}</p>
@@ -207,7 +217,7 @@ export default function Dashboard() {
     <>
       <h2 className="text-2xl font-bold text-white">My Orders</h2>
       <div className="mt-6 space-y-4">
-        {mockOrders.map((order) => (
+        {orders.map((order) => (
           <article key={order._id} className={`${glassCard} p-5`}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -313,7 +323,7 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {mockWalletTransactions.map((tx) => (
+            {transactions.map((tx) => (
               <tr key={tx._id} className="border-b border-white/10">
                 <td className="p-4 text-gray-400">{formatDate(tx.createdAt)}</td>
                 <td className="p-4 text-gray-300">{tx.description}</td>
@@ -333,7 +343,7 @@ export default function Dashboard() {
     <>
       <h2 className="text-2xl font-bold text-white">My Tournament Registrations</h2>
       <div className="mt-6 space-y-4">
-        {mockRegistrations.map((reg) => (
+        {registrations.map((reg) => (
           <article key={reg._id} className={`${glassCard} flex gap-4 p-4`}>
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/20 to-violet-500/20">
               <i className="ti ti-trophy text-3xl text-amber-400" />

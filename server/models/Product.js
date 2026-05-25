@@ -1,3 +1,4 @@
+// server/models/Product.js
 import mongoose from 'mongoose'
 
 const productSchema = new mongoose.Schema(
@@ -39,5 +40,8 @@ const productSchema = new mongoose.Schema(
   },
   { timestamps: true }
 )
+
+productSchema.index({ name: 1, description: 1 })
+productSchema.index({ category: 1, sport: 1, isActive: 1 })
 
 export default mongoose.model('Product', productSchema)

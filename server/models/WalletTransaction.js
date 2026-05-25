@@ -1,3 +1,4 @@
+// server/models/WalletTransaction.js
 import mongoose from 'mongoose'
 
 const walletTransactionSchema = new mongoose.Schema(
@@ -13,5 +14,7 @@ const walletTransactionSchema = new mongoose.Schema(
   },
   { timestamps: true }
 )
+
+walletTransactionSchema.index({ user: 1, createdAt: -1 })
 
 export default mongoose.model('WalletTransaction', walletTransactionSchema)

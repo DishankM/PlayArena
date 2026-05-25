@@ -26,7 +26,7 @@ export const HeroBanner = () => {
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-arena-navy">
-      {/* Dark Gradient Background (Fallback) */}
+      {/* Dark Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-arena-navy via-arena-navy-deep to-black" />
       
       {/* Animated Grid Pattern */}
@@ -196,7 +196,7 @@ export const HeroBanner = () => {
           </div>
 
           {/* Featured Tournament Card */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-6 backdrop-blur-xl shadow-2xl">
+          {/* <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-6 backdrop-blur-xl shadow-2xl">
             <div className="absolute right-0 top-0">
               <div className="bg-gradient-to-l from-arena-primary to-arena-primary-dark px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white rounded-bl-xl">
                 🔥 Featured
@@ -250,7 +250,7 @@ export const HeroBanner = () => {
               Register Now
               <i className="ti ti-arrow-right" />
             </Link>
-          </div>
+          </div> */}
 
           {/* Live Match Indicator */}
           {/* <div className="absolute -left-4 top-1/3 hidden rounded-xl border border-white/20 bg-black/60 p-3 backdrop-blur-md lg:flex lg:items-center lg:gap-3">

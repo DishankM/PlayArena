@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { Navbar } from '../components/common/Navbar'
 import { Footer } from '../components/common/Footer'
 
-import { mockTournaments } from '../data/mockData'
+import { tournamentAPI } from '../services/api'
 
 import {
   formatDate,
@@ -69,12 +69,36 @@ export default function EventDetail() {
 
   const [activeTab, setActiveTab] = useState('details')
   const [isImageLoaded, setIsImageLoaded] = useState(false)
-
-  const tournament = mockTournaments.find((t) => t._id === id)
+  const [tournament, setTournament] = useState(null)
+  const [relatedTournaments, setRelatedTournaments] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [])
+    setLoading(true)
+    tournamentAPI
+      .get(`/${id}`)
+      .then(async (res) => {
+        const nextTournament = res.data.data.tournament
+        setTournament(nextTournament)
+        const relatedRes = await tournamentAPI.get(`/?sport=${nextTournament.sport}&limit=3`)
+        setRelatedTournaments((relatedRes.data.data.tournaments || []).filter((item) => item._id !== nextTournament._id))
+      })
+      .catch(() => setTournament(null))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0B1020] text-white">
+        <Navbar />
+        <main className="mx-auto max-w-7xl px-6 py-24">
+          <div className="h-96 animate-pulse rounded-3xl bg-white/10" />
+        </main>
+        <Footer />
+      </div>
+    )
+  }
 
   if (!tournament) {
     return (
@@ -152,11 +176,6 @@ export default function EventDetail() {
     await navigator.clipboard.writeText(window.location.href)
     alert('Link copied!')
   }
-
-  // Get related tournaments (excluding current one)
-  const relatedTournaments = mockTournaments
-    .filter((t) => t._id !== _id && t.sport === sport)
-    .slice(0, 3)
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#0B1020] text-white">

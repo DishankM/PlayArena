@@ -1,23 +1,32 @@
-// client/src/components/home/FeaturedProducts.jsx
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../products/ProductCard';
-import { mockProducts } from '../../data/mockData';
-
-const featured = mockProducts.filter((p) => p.isFeatured).slice(0, 4);
-
-// Additional featured products for carousel view
-const moreProducts = mockProducts.filter((p) => !p.isFeatured).slice(0, 4);
+import { productAPI } from '../../services/api';
 
 export const FeaturedProducts = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'carousel'
+  const [viewMode, setViewMode] = useState('grid'); 
+  const [featured, setFeatured] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const moreProducts = featured;
+
+  useEffect(() => {
+    let mounted = true;
+    productAPI
+      .get('/?featured=true&limit=4')
+      .then((res) => {
+        if (mounted) setFeatured(res.data.data.products || []);
+      })
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Auto-rotate carousel
   useEffect(() => {
-    if (viewMode === 'carousel' && !isHovered) {
+    if (viewMode === 'carousel' && !isHovered && moreProducts.length) {
       const interval = setInterval(() => {
         setActiveIndex((prev) => (prev + 1) % moreProducts.length);
       }, 5000);
@@ -26,10 +35,12 @@ export const FeaturedProducts = () => {
   }, [viewMode, isHovered, moreProducts.length]);
 
   const handlePrevSlide = () => {
+    if (!moreProducts.length) return;
     setActiveIndex((prev) => (prev - 1 + moreProducts.length) % moreProducts.length);
   };
 
   const handleNextSlide = () => {
+    if (!moreProducts.length) return;
     setActiveIndex((prev) => (prev + 1) % moreProducts.length);
   };
 
@@ -110,7 +121,10 @@ export const FeaturedProducts = () => {
         {/* Grid View */}
         {viewMode === 'grid' && (
           <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((product, index) => (
+            {loading && [1, 2, 3, 4].map((item) => (
+              <div key={item} className="h-80 animate-pulse rounded-2xl bg-white/10" />
+            ))}
+            {!loading && featured.map((product, index) => (
               <div
                 key={product._id}
                 className="group animate-fade-in-up"

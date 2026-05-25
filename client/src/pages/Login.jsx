@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/slices/authSlice';
 import { setWallet } from '../store/slices/walletSlice';
-import { mockUser } from '../data/mockData';
+import { authAPI } from '../services/api';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -78,7 +78,7 @@ export default function Login() {
     setShowPassword((prev) => !prev);
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
@@ -91,24 +91,18 @@ export default function Login() {
       localStorage.removeItem('rememberedEmail');
     }
     
-    // Simulate API call
-    setTimeout(() => {
-      // Check credentials (mock validation)
-      if (formData.email === 'demo@playarena.in' && formData.password === 'password') {
-        dispatch(setCredentials({ user: mockUser, token: `mock-jwt-token-${Date.now()}` }));
-        dispatch(
-          setWallet({
-            balance: mockUser.walletBalance,
-            nxlCredits: mockUser.nxlCredits,
-          })
-        );
-        setLoading(false);
-        navigate(from, { replace: true });
-      } else {
-        setFormError('Invalid email or password. Please try again.');
-        setLoading(false);
-      }
-    }, 1200);
+    try {
+      const res = await authAPI.post('/login', formData);
+      const { user, accessToken } = res.data.data;
+      dispatch(setCredentials({ user, token: accessToken }));
+      localStorage.setItem('accessToken', accessToken);
+      dispatch(setWallet({ balance: user.walletBalance || 0, nxlCredits: user.nxlCredits || 0 }));
+      navigate(from, { replace: true });
+    } catch (error) {
+      setFormError(error.message || 'Invalid email or password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { Navbar } from '../components/common/Navbar'
 import { Footer } from '../components/common/Footer'
-import { mockUser } from '../data/mockData'
 import { formatPrice, calculateNXL } from '../utils/helpers'
 
 const steps = ['Address', 'Payment', 'Confirm']
@@ -14,17 +13,18 @@ const glassCard = 'rounded-2xl border border-white/10 bg-white/[0.04] shadow-xl 
 export default function Checkout() {
   const { items, total } = useSelector((state) => state.cart)
   const wallet = useSelector((state) => state.wallet)
-  const nxlCredits = wallet.nxlCredits || mockUser.nxlCredits
+  const user = useSelector((state) => state.auth.user) || {}
+  const nxlCredits = wallet.nxlCredits || user.nxlCredits || 0
 
   const [step, setStep] = useState(1)
   const [address, setAddress] = useState({
-    name: mockUser.name,
-    phone: mockUser.phone,
-    street: mockUser.address.street,
-    city: mockUser.address.city,
-    state: mockUser.address.state,
-    pincode: mockUser.address.pincode,
-    country: mockUser.address.country,
+    name: user.name || '',
+    phone: user.phone || '',
+    street: user.address?.street || '',
+    city: user.address?.city || '',
+    state: user.address?.state || '',
+    pincode: user.address?.pincode || '',
+    country: user.address?.country || 'India',
   })
   const [saveAddress, setSaveAddress] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState('razorpay')
@@ -49,7 +49,7 @@ export default function Checkout() {
     if (nxlInsufficient) return
     setProcessing(true)
     setTimeout(() => {
-      setOrderId(String(Math.floor(100000 + Math.random() * 900000)))
+      setOrderId('Payment integration coming Day 5')
       setProcessing(false)
       setStep(3)
     }, 2000)

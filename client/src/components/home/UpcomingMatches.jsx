@@ -1,4 +1,3 @@
-// client/src/components/home/UpcomingMatches.jsx
 
 const mockMatches = [
   {

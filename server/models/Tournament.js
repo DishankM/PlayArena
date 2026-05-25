@@ -1,3 +1,4 @@
+// server/models/Tournament.js
 import mongoose from 'mongoose'
 
 const tournamentSchema = new mongoose.Schema(
@@ -26,5 +27,8 @@ const tournamentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 )
+
+tournamentSchema.index({ status: 1, startDate: 1 })
+tournamentSchema.index({ sport: 1, type: 1, format: 1 })
 
 export default mongoose.model('Tournament', tournamentSchema)

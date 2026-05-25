@@ -1,3 +1,4 @@
+// server/models/Order.js
 import mongoose from 'mongoose'
 
 const orderSchema = new mongoose.Schema(
@@ -42,5 +43,8 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 )
+
+orderSchema.index({ user: 1, createdAt: -1 })
+orderSchema.index({ paymentStatus: 1, orderStatus: 1 })
 
 export default mongoose.model('Order', orderSchema)

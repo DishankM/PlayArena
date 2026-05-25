@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { Navbar } from '../components/common/Navbar'
 import { Footer } from '../components/common/Footer'
 import { updateQuantity, removeFromCart } from '../store/slices/cartSlice'
-import { mockCoupons, mockUser } from '../data/mockData'
+import { orderAPI } from '../services/api'
 import { formatPrice, calculateNXL } from '../utils/helpers'
 
 const glassCard = 'rounded-2xl border border-white/10 bg-white/[0.04] shadow-xl shadow-black/10'
@@ -15,22 +15,20 @@ export default function Cart() {
   const dispatch = useDispatch()
   const { items, total, itemCount } = useSelector((state) => state.cart)
   const wallet = useSelector((state) => state.wallet)
-  const nxlBalance = wallet.nxlCredits || mockUser.nxlCredits
+  const nxlBalance = wallet.nxlCredits || 0
 
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState(null)
   const [couponError, setCouponError] = useState('')
   const [couponSuccess, setCouponSuccess] = useState('')
+  const [couponDiscount, setCouponDiscount] = useState(0)
   const [useNxl, setUseNxl] = useState(false)
   const [nxlToUse, setNxlToUse] = useState(0)
 
   const discount = useMemo(() => {
     if (!appliedCoupon) return 0
-    if (total < appliedCoupon.minOrderAmount) return 0
-    return appliedCoupon.discountType === 'percent'
-      ? Math.round((total * appliedCoupon.discountValue) / 100)
-      : appliedCoupon.discountValue
-  }, [appliedCoupon, total])
+    return couponDiscount
+  }, [appliedCoupon, couponDiscount])
 
   const delivery = total - discount >= 999 || total === 0 ? 0 : 49
   const subtotalAfterDiscount = Math.max(0, total - discount)
@@ -39,24 +37,22 @@ export default function Cart() {
   const grandTotal = Math.max(0, subtotalAfterDiscount + delivery - nxlApplied)
   const nxlToEarn = calculateNXL(grandTotal)
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     setCouponError('')
     setCouponSuccess('')
-    const found = mockCoupons.find((c) => c.code.toUpperCase() === couponCode.trim().toUpperCase())
-    if (!found) {
-      setCouponError('Invalid coupon code.')
-      return
+    try {
+      const res = await orderAPI.post('/validate-coupon', { code: couponCode.trim(), subtotal: total })
+      setAppliedCoupon(res.data.data.coupon)
+      setCouponDiscount(res.data.data.discount)
+      setCouponSuccess(`Coupon ${res.data.data.coupon.code} applied successfully!`)
+    } catch (error) {
+      setCouponError(error.message || 'Invalid coupon code.')
     }
-    if (total < found.minOrderAmount) {
-      setCouponError(`Minimum order amount is ${formatPrice(found.minOrderAmount)}.`)
-      return
-    }
-    setAppliedCoupon(found)
-    setCouponSuccess(`Coupon ${found.code} applied successfully!`)
   }
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null)
+    setCouponDiscount(0)
     setCouponCode('')
     setCouponSuccess('')
     setCouponError('')

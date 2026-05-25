@@ -1,13 +1,13 @@
 // client/src/pages/Products.jsx
 
-import { useMemo, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Navbar } from '../components/common/Navbar'
 import { Footer } from '../components/common/Footer'
 import { ProductCard } from '../components/products/ProductCard'
 import { ProductListRow } from '../components/products/ProductListRow'
 import { FilterSidebar } from '../components/products/FilterSidebar'
-import { mockProducts } from '../data/mockData'
+import { productAPI } from '../services/api'
 
 const defaultFilters = {
   categories: [],
@@ -23,6 +23,10 @@ export default function Products() {
   const [sort, setSort] = useState('featured')
   const [view, setView] = useState('grid')
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [products, setProducts] = useState([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const sport = searchParams.get('sport')
@@ -33,36 +37,31 @@ export default function Products() {
 
   const searchQuery = searchParams.get('search')?.toLowerCase() || ''
 
-  const filteredProducts = useMemo(() => {
-    let list = [...mockProducts]
+  const fetchProducts = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const params = new URLSearchParams()
+      if (searchQuery) params.set('search', searchQuery)
+      if (filters.categories[0]) params.set('category', filters.categories[0])
+      if (filters.sports[0]) params.set('sport', filters.sports[0])
+      if (filters.minPrice) params.set('minPrice', filters.minPrice)
+      if (filters.maxPrice) params.set('maxPrice', filters.maxPrice)
+      if (filters.rating) params.set('rating', filters.rating)
+      params.set('sort', sort === 'rating' ? 'top-rated' : sort)
+      const res = await productAPI.get(`/?${params.toString()}`)
+      setProducts(res.data.data.products || [])
+      setTotalCount(res.data.data.totalCount || 0)
+    } catch (apiError) {
+      setError(apiError.message || 'Unable to load products')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    if (searchQuery) {
-      list = list.filter((p) => p.name.toLowerCase().includes(searchQuery))
-    }
-    if (filters.categories.length) {
-      list = list.filter((p) => filters.categories.includes(p.category))
-    }
-    if (filters.sports.length) {
-      list = list.filter((p) => filters.sports.includes(p.sport))
-    }
-    if (filters.minPrice) {
-      list = list.filter((p) => p.price >= Number(filters.minPrice))
-    }
-    if (filters.maxPrice) {
-      list = list.filter((p) => p.price <= Number(filters.maxPrice))
-    }
-    if (filters.rating > 0) {
-      list = list.filter((p) => (p.ratings?.average || 0) >= filters.rating)
-    }
-
-    switch (sort) {
-      case 'price-asc': list.sort((a, b) => a.price - b.price); break
-      case 'price-desc': list.sort((a, b) => b.price - a.price); break
-      case 'newest': list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); break
-      case 'rating': list.sort((a, b) => (b.ratings?.average || 0) - (a.ratings?.average || 0)); break
-      default: list.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0))
-    }
-    return list
+  useEffect(() => {
+    const timer = setTimeout(fetchProducts, 400)
+    return () => clearTimeout(timer)
   }, [filters, sort, searchQuery])
 
   const handleClearFilters = () => setFilters(defaultFilters)
@@ -95,7 +94,7 @@ export default function Products() {
           <div className="min-w-0 flex-1">
             {/* Toolbar */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-gray-400">{filteredProducts.length} products found</p>
+              <p className="text-sm text-gray-400">{totalCount} products found</p>
               <div className="flex flex-wrap items-center gap-3">
                 <button onClick={() => setMobileFiltersOpen(true)} className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm text-white lg:hidden">
                   <i className="ti ti-adjustments" />
@@ -120,7 +119,18 @@ export default function Products() {
             </div>
 
             {/* Products */}
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+                  <div key={item} className="h-80 animate-pulse rounded-2xl bg-white/10" />
+                ))}
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center rounded-2xl border border-red-500/20 bg-red-500/10 py-16 text-center">
+                <p className="text-red-300">{error}</p>
+                <button onClick={fetchProducts} className="mt-6 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-6 py-2.5 font-semibold text-white">Retry</button>
+              </div>
+            ) : products.length === 0 ? (
               <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-white/[0.04] py-16 text-center">
                 <i className="ti ti-mood-sad text-5xl text-gray-500" />
                 <h2 className="mt-4 text-xl font-bold text-white">No products found</h2>
@@ -129,13 +139,13 @@ export default function Products() {
               </div>
             ) : view === 'grid' ? (
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredProducts.map((product) => (
+                {products.map((product) => (
                   <ProductCard key={product._id} product={product} />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {filteredProducts.map((product) => (
+                {products.map((product) => (
                   <ProductListRow key={product._id} product={product} />
                 ))}
               </div>

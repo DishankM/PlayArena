@@ -1,5 +1,3 @@
-// client/src/components/home/SportsCategoryGrid.jsx
-
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 

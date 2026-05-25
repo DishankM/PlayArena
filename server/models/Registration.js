@@ -1,3 +1,4 @@
+// server/models/Registration.js
 import mongoose from 'mongoose'
 
 const registrationSchema = new mongoose.Schema(
@@ -18,5 +19,7 @@ const registrationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 )
+
+registrationSchema.index({ user: 1, tournament: 1 }, { unique: true })
 
 export default mongoose.model('Registration', registrationSchema)

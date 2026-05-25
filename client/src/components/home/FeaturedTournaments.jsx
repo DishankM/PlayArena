@@ -1,14 +1,8 @@
-// client/src/components/home/FeaturedTournaments.jsx
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { EventCard } from '../events/EventCard';
-import { mockTournaments } from '../../data/mockData';
+import { tournamentAPI } from '../../services/api';
 import { getSlotPercent } from '../../utils/helpers';
-
-const upcoming = mockTournaments
-  .filter((t) => t.status === 'open' || t.status === 'upcoming')
-  .slice(0, 4);
 
 const prizePoolStats = [
   { label: 'Total Prize Pool', value: '₹5.2L+', icon: 'ti-trophy' },
@@ -19,6 +13,21 @@ const prizePoolStats = [
 
 export const FeaturedTournaments = () => {
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [upcoming, setUpcoming] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    tournamentAPI
+      .get('/upcoming')
+      .then((res) => {
+        if (mounted) setUpcoming((res.data.data.tournaments || []).slice(0, 4));
+      })
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-arena-navy to-arena-navy-deep py-20">
@@ -122,7 +131,10 @@ export const FeaturedTournaments = () => {
 
         {/* Tournaments Grid */}
         <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {upcoming.map((tournament, index) => (
+          {loading && [1, 2, 3, 4].map((item) => (
+            <div key={item} className="h-80 animate-pulse rounded-2xl bg-white/10" />
+          ))}
+          {!loading && upcoming.map((tournament, index) => (
             <div
               key={tournament._id}
               className="animate-fade-in-up"

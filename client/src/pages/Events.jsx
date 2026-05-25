@@ -1,10 +1,10 @@
 // client/src/pages/Events.jsx
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '../components/common/Navbar';
 import { Footer } from '../components/common/Footer';
 import { EventCard } from '../components/events/EventCard';
-import { mockTournaments } from '../data/mockData';
+import { tournamentAPI } from '../services/api';
 
 const typeTabs = [
   { id: 'all', label: 'All Events', icon: 'ti-calendar' },
@@ -44,49 +44,37 @@ export default function Events() {
   const [sort, setSort] = useState('date');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
   const [isFiltersVisible, setIsFiltersVisible] = useState(true);
+  const [filtered, setFiltered] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Scroll to top on page load
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const filtered = useMemo(() => {
-    let list = [...mockTournaments];
-    
-    if (typeFilter !== 'all') {
-      list = list.filter((t) => t.type === typeFilter);
-    }
-    
-    if (sportFilter !== 'all') {
-      list = list.filter((t) => t.sport.toLowerCase() === sportFilter);
-    }
-    
-    if (statusFilter !== 'all') {
-      list = list.filter((t) => t.status === statusFilter);
-    }
-
-    switch (sort) {
-      case 'fee-low':
-        list.sort((a, b) => a.entryFee - b.entryFee);
-        break;
-      case 'fee-high':
-        list.sort((a, b) => b.entryFee - a.entryFee);
-        break;
-      case 'prize':
-        list.sort((a, b) => (b.prizePool || 0) - (a.prizePool || 0));
-        break;
-      case 'slots':
-        list.sort((a, b) => {
-          const aFill = a.filledSlots / a.maxSlots;
-          const bFill = b.filledSlots / b.maxSlots;
-          return aFill - bFill;
-        });
-        break;
-      case 'date':
-      default:
-        list.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-    }
-    return list;
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const params = new URLSearchParams();
+        if (typeFilter !== 'all') params.set('type', typeFilter);
+        if (sportFilter !== 'all') params.set('sport', sportFilter);
+        if (statusFilter !== 'all') params.set('status', statusFilter);
+        const res = await tournamentAPI.get(`/?${params.toString()}`);
+        let list = res.data.data.tournaments || [];
+        if (sort === 'fee-low') list = [...list].sort((a, b) => a.entryFee - b.entryFee);
+        if (sort === 'fee-high') list = [...list].sort((a, b) => b.entryFee - a.entryFee);
+        if (sort === 'slots') list = [...list].sort((a, b) => (a.filledSlots / a.maxSlots) - (b.filledSlots / b.maxSlots));
+        setFiltered(list);
+      } catch (apiError) {
+        setError(apiError.message || 'Unable to load events');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTournaments();
   }, [typeFilter, sportFilter, statusFilter, sort]);
 
   const clearFilters = () => {
@@ -306,7 +294,17 @@ export default function Events() {
 
       {/* Events Grid */}
       <main className="mx-auto max-w-7xl px-6 py-12 md:px-16">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <div key={item} className="h-80 animate-pulse rounded-2xl bg-white/10" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 py-20 text-center">
+            <p className="text-red-300">{error}</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 py-20 text-center backdrop-blur-sm">
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/5">
               <i className="ti ti-calendar-off text-5xl text-gray-500" />

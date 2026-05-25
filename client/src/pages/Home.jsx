@@ -1,4 +1,3 @@
-// client/src/pages/Home.jsx
 
 import { Navbar } from '../components/common/Navbar'
 import { Footer } from '../components/common/Footer'

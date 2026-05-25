@@ -1,11 +1,12 @@
+// client/src/services/api.js
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_URL
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const attachInterceptors = (instance) => {
   instance.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('accessToken')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -18,12 +19,20 @@ const attachInterceptors = (instance) => {
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
-        localStorage.removeItem('token')
+        localStorage.removeItem('accessToken')
         localStorage.removeItem('user')
         if (window.location.pathname !== '/login') {
           window.location.href = '/login'
         }
       }
+
+      const responseData = error.response?.data
+      if (responseData?.errors?.length) {
+        error.message = responseData.errors.join(' | ')
+      } else {
+        error.message = responseData?.message || error.message
+      }
+
       return Promise.reject(error)
     }
   )
@@ -45,5 +54,6 @@ export const productAPI = createAPI('/products')
 export const orderAPI = createAPI('/orders')
 export const tournamentAPI = createAPI('/tournaments')
 export const walletAPI = createAPI('/wallet')
+export const adminAPI = createAPI('/admin')
 
 export default api

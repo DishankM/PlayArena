@@ -7,7 +7,7 @@ import { Footer } from '../components/common/Footer'
 import { StarRating } from '../components/common/StarRating'
 import { ProductCard } from '../components/products/ProductCard'
 import { addToCart } from '../store/slices/cartSlice'
-import { mockProducts } from '../data/mockData'
+import { productAPI } from '../services/api'
 import {
   formatPrice,
   calculateNXL,
@@ -46,7 +46,10 @@ export default function ProductDetail() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
-  const product = mockProducts.find((p) => p.slug === slug)
+  const [product, setProduct] = useState(null)
+  const [related, setRelated] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -59,9 +62,40 @@ export default function ProductDetail() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [])
+    setLoading(true)
+    setNotFound(false)
+    productAPI
+      .get(`/${slug}`)
+      .then(async (res) => {
+        const nextProduct = res.data.data.product
+        setProduct(nextProduct)
+        const relatedRes = await productAPI.get(`/?category=${nextProduct.category}&limit=4`)
+        setRelated((relatedRes.data.data.products || []).filter((item) => item._id !== nextProduct._id))
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false))
+  }, [slug])
 
-  if (!product) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0B1020] text-white">
+        <Navbar />
+        <main className="mx-auto max-w-7xl px-6 py-8 lg:px-12">
+          <div className="grid gap-10 lg:grid-cols-2">
+            <div className="h-96 animate-pulse rounded-2xl bg-white/10" />
+            <div className="space-y-4">
+              <div className="h-10 animate-pulse rounded bg-white/10" />
+              <div className="h-6 animate-pulse rounded bg-white/10" />
+              <div className="h-24 animate-pulse rounded bg-white/10" />
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (notFound || !product) {
     return (
       <div className="min-h-screen bg-[#0B1020]">
         <Navbar />
@@ -100,10 +134,9 @@ export default function ProductDetail() {
   const discount = getDiscountPercent(price, originalPrice)
   const nxlEarn = calculateNXL(price * quantity)
   const icon = sportIcons[sport] || 'ti-shirt'
-  const thumbs = images.length ? images : [null, null, null]
-  const related = mockProducts
-    .filter((p) => p.category === category && p._id !== product._id)
-    .slice(0, 4)
+  const imageList = images || []
+  const thumbs = imageList.length ? imageList : [null, null, null]
+  const reviews = product.reviews?.length ? product.reviews : mockReviews
 
   const handleAddToCart = () => {
     dispatch(addToCart({
@@ -112,7 +145,7 @@ export default function ProductDetail() {
       slug: product.slug,
       category,
       price,
-      image: images?.[0] || '',
+      image: imageList?.[0] || '',
       quantity,
     }))
   }
@@ -157,8 +190,8 @@ export default function ProductDetail() {
           {/* Left - Images */}
           <div>
             <div className="relative flex h-96 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] p-8">
-              {images[selectedImage] ? (
-                <img src={images[selectedImage]} alt={name} className="max-h-full max-w-full object-contain" />
+              {imageList[selectedImage] ? (
+                <img src={imageList[selectedImage]} alt={name} className="max-h-full max-w-full object-contain" />
               ) : (
                 <i className={`ti ${icon} text-8xl text-gray-500`} />
               )}
@@ -311,15 +344,15 @@ export default function ProductDetail() {
               </div>
 
               <div className="mt-8 space-y-4">
-                {mockReviews.map((review) => (
-                  <div key={review.user} className={`${glassCard} p-5`}>
+                {reviews.map((review) => (
+                  <div key={review._id || review.user} className={`${glassCard} p-5`}>
                     <div className="flex items-center justify-between">
                       <StarRating rating={review.rating} color="text-amber-400" />
                       <span className="text-sm text-gray-400">{review.date}</span>
                     </div>
                     <h3 className="mt-2 font-semibold text-white">{review.title}</h3>
                     <p className="mt-1 text-gray-300">{review.body}</p>
-                    <p className="mt-2 text-sm text-gray-400">— {review.user}</p>
+                    <p className="mt-2 text-sm text-gray-400">- {review.user?.name || review.user}</p>
                   </div>
                 ))}
               </div>

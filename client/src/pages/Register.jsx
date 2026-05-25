@@ -4,9 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/slices/authSlice';
 import { setWallet } from '../store/slices/walletSlice';
-import { mockUser } from '../data/mockData';
-import { AuthPanel } from '../components/common/AuthPanel';
-import { AuthInput } from '../components/common/AuthInput';
+import { authAPI } from '../services/api';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^(\+91[\-\s]?)?[6-9]\d{9}$/;
@@ -29,6 +27,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const [passwordStrength, setPasswordStrength] = useState(0);
 
   // Password strength checker
@@ -102,6 +101,9 @@ export default function Register() {
           if (!value) return 'Password is required';
           if (value.length < 8) return 'Password must be at least 8 characters';
           if (value.length > 100) return 'Password must be less than 100 characters';
+          if (!/[a-z]/.test(value)) return 'Password must contain lowercase letters';
+          if (!/[A-Z]/.test(value)) return 'Password must contain uppercase letters';
+          if (!/[0-9]/.test(value)) return 'Password must contain a number';
           return '';
         case 'confirmPassword':
           if (!value) return 'Please confirm your password';
@@ -141,29 +143,30 @@ export default function Register() {
 
   const showError = (field) => (touched[field] ? errors[field] : '');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateAll()) return;
     setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const user = {
-        ...mockUser,
-        id: `user_${Date.now()}`,
+    setFormError('');
+
+    try {
+      const payload = {
         name: formData.name.trim(),
         email: formData.email.trim(),
-        phone: formData.phone.trim() || mockUser.phone,
-        createdAt: new Date().toISOString(),
-        nxlBalance: 500, // New user gets 500 NXL credits
+        phone: formData.phone.trim(),
+        password: formData.password,
       };
-      dispatch(setCredentials({ user, token: `mock-jwt-token-${Date.now()}` }));
-      dispatch(
-        setWallet({ balance: mockUser.walletBalance, nxlCredits: user.nxlBalance })
-      );
-      setLoading(false);
+      const res = await authAPI.post('/register', payload);
+      const { user, accessToken } = res.data.data;
+      dispatch(setCredentials({ user, token: accessToken }));
+      localStorage.setItem('accessToken', accessToken);
+      dispatch(setWallet({ balance: user.walletBalance || 0, nxlCredits: user.nxlCredits || 0 }));
       navigate('/dashboard');
-    }, 1500);
+    } catch (error) {
+      setFormError(error.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -214,6 +217,11 @@ export default function Register() {
             </div>
 
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              {formError && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+                  {formError}
+                </div>
+              )}
               {/* Full Name */}
               <div>
                 <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-gray-300">
