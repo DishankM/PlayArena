@@ -1,14 +1,11 @@
 // server/controllers/orderController.js
-import crypto from 'crypto'
 import mongoose from 'mongoose'
 import { validationResult } from 'express-validator'
 import Coupon from '../models/Coupon.js'
 import Order from '../models/Order.js'
 import Product from '../models/Product.js'
-import User from '../models/User.js'
 import { createError } from '../middleware/errorMiddleware.js'
-import { creditFixedNXL, creditNXL, deductNXL } from '../services/nxlService.js'
-import { sendOrderConfirmEmail } from '../services/emailService.js'
+import { creditFixedNXL } from '../services/nxlService.js'
 
 const throwIfInvalid = (req) => {
   const errors = validationResult(req)
@@ -28,12 +25,6 @@ const getValidCoupon = async (code, subtotal, userId) => {
   if (coupon.usedBy.some((usedUser) => String(usedUser) === String(userId))) throw createError(400, 'You have already used this coupon')
   if (subtotal < coupon.minOrderAmount) throw createError(400, `Minimum order amount Rs. ${coupon.minOrderAmount} required for this coupon`)
   return coupon
-}
-
-const verifyRazorpay = ({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) => {
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) throw createError(400, 'Payment verification failed')
-  const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '').update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex')
-  if (expected !== razorpay_signature) throw createError(400, 'Payment verification failed')
 }
 
 export const validateCoupon = async (req, res, next) => {
@@ -61,7 +52,7 @@ export const placeOrder = async (req, res, next) => {
   session.startTransaction()
   try {
     throwIfInvalid(req)
-    const { items, shippingAddress, paymentMethod, couponCode, nxlToUse = 0, paymentId } = req.body
+    const { items, shippingAddress, paymentMethod, couponCode } = req.body
     const productIds = items.map((item) => item.product || item.productId || item._id)
     const products = await Product.find({ _id: { $in: productIds } }).session(session)
 
@@ -80,17 +71,7 @@ export const placeOrder = async (req, res, next) => {
       discount = couponDiscount(coupon, subtotal)
     }
 
-    let total = Math.max(subtotal - discount, 0)
-    if (Number(nxlToUse) > 0) {
-      const user = await User.findById(req.user._id).select('nxlCredits').session(session)
-      if (Number(nxlToUse) > user.nxlCredits) throw createError(400, 'Insufficient NXL credits')
-      if (Number(nxlToUse) > total) throw createError(400, 'NXL credits cannot exceed order total')
-      await deductNXL(req.user._id, Number(nxlToUse), 'NXL used on order checkout', 'pending-order')
-      total -= Number(nxlToUse)
-    }
-
-    if (paymentMethod === 'razorpay' && total > 0) verifyRazorpay(req.body)
-    if (paymentMethod === 'stripe' && total > 0 && !paymentId) throw createError(400, 'Payment not completed')
+    const total = Math.max(subtotal - discount, 0)
 
     const [order] = await Order.create(
       [
@@ -100,26 +81,19 @@ export const placeOrder = async (req, res, next) => {
           shippingAddress,
           subtotal,
           discount,
-          nxlUsed: Number(nxlToUse),
+          nxlUsed: 0,
           total,
           paymentMethod,
-          paymentId: paymentId || req.body.razorpay_payment_id,
-          paymentStatus: 'paid',
-          orderStatus: 'confirmed',
+          paymentStatus: 'pending',
+          orderStatus: 'pending',
           couponCode: coupon?.code,
         },
       ],
       { session }
     )
 
-    await Promise.all(orderItems.map((item) => Product.updateOne({ _id: item.product }, { $inc: { stock: -item.quantity, sold: item.quantity } }, { session })))
-    if (coupon) await Coupon.updateOne({ _id: coupon._id }, { $inc: { usedCount: 1 }, $push: { usedBy: req.user._id } }, { session })
-
     await session.commitTransaction()
-    const nxlEarned = await creditNXL(req.user._id, order.total, `NXL earned on order #${order._id}`, order._id)
-    sendOrderConfirmEmail(req.user.email, order)
-
-    res.status(201).json({ success: true, data: { order, nxlEarned } })
+    res.status(201).json({ success: true, data: { order }, message: 'Order created. Complete payment to confirm.' })
   } catch (error) {
     await session.abortTransaction()
     next(error)
@@ -156,11 +130,10 @@ export const cancelOrder = async (req, res, next) => {
     if (!['pending', 'confirmed'].includes(order.orderStatus)) throw createError(400, 'Order cannot be cancelled at this stage')
 
     order.orderStatus = 'cancelled'
-    await Promise.all([
-      order.save(),
-      ...order.items.map((item) => Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity, sold: -item.quantity } })),
-      order.nxlUsed ? creditFixedNXL(order.user, order.nxlUsed, `NXL refunded for cancelled order #${order._id}`, order._id) : Promise.resolve(),
-    ])
+    const stockRollbacks = order.paymentStatus === 'paid'
+      ? order.items.map((item) => Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity, sold: -item.quantity } }))
+      : []
+    await Promise.all([order.save(), ...stockRollbacks, order.nxlUsed ? creditFixedNXL(order.user, order.nxlUsed, `NXL refunded for cancelled order #${order._id}`, order._id) : Promise.resolve()])
 
     res.status(200).json({ success: true, data: { order }, message: 'Order cancelled' })
   } catch (error) {

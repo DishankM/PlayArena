@@ -5,8 +5,9 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Navbar } from '../components/common/Navbar';
 import { Footer } from '../components/common/Footer';
-import { tournamentAPI } from '../services/api';
+import { paymentAPI, tournamentAPI } from '../services/api';
 import { formatPrice } from '../utils/helpers';
+import { TournamentStripeForm } from '../components/payment/TournamentStripeForm';
 
 export default function EventRegister() {
   const { id } = useParams();
@@ -35,6 +36,19 @@ export default function EventRegister() {
   const [qrToken, setQrToken] = useState('');
   const [errors, setErrors] = useState({});
   const [useNXL, setUseNXL] = useState(false);
+  const [pendingRegistrationId, setPendingRegistrationId] = useState('');
+  const [stripeClientSecret, setStripeClientSecret] = useState('');
+  const [stripeAmount, setStripeAmount] = useState(0);
+
+  const loadRazorpayScript = () =>
+    new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
 
   useEffect(() => {
     if (!user) {
@@ -143,10 +157,66 @@ export default function EventRegister() {
         type: tournament.format === 'solo' ? 'solo' : 'team',
         teamData,
         playerData,
-        paymentMethod,
+        paymentMethod: useNXL && canUseNXL ? 'nxl' : paymentMethod,
       });
-      setQrToken(res.data.data.qrToken);
-      setStep('success');
+      const registration = res.data.data.registration;
+      setPendingRegistrationId(registration._id);
+      if (!res.data.data.requiresPayment) {
+        setQrToken(res.data.data.qrToken);
+        setStep('success');
+        return;
+      }
+
+      if (paymentMethod === 'razorpay') {
+        const loaded = await loadRazorpayScript();
+        if (!loaded) throw new Error('Failed to load Razorpay SDK');
+        const { data: createRes } = await paymentAPI.post('/tournament/razorpay/create-order', { registrationId: registration._id });
+        const options = {
+          key: createRes.data.keyId,
+          amount: createRes.data.amount,
+          currency: createRes.data.currency,
+          name: 'PlayArena',
+          description: `${tournament.name} registration`,
+          order_id: createRes.data.razorpayOrderId,
+          prefill: { name: playerData.name, email: playerData.email, contact: playerData.phone },
+          handler: async (response) => {
+            const { data: verifyRes } = await paymentAPI.post('/tournament/razorpay/verify', {
+              registrationId: registration._id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+            setQrToken(verifyRes.data.qrToken);
+            setStep('success');
+          },
+          modal: {
+            ondismiss: () => {
+              setStep('form');
+              setErrors({ submit: 'Payment cancelled. You can retry from registration page.' });
+            },
+          },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', (response) => {
+          setStep('form');
+          setErrors({ submit: response.error?.description || 'Payment failed' });
+        });
+        rzp.open();
+        return;
+      }
+
+      if (paymentMethod === 'stripe') {
+        const { data: stripeRes } = await paymentAPI.post('/tournament/stripe/create-intent', {
+          registrationId: registration._id,
+        });
+        setStripeClientSecret(stripeRes.data.clientSecret);
+        setStripeAmount(stripeRes.data.amount);
+        setStep('form');
+        return;
+      }
+
+      setStep('form');
+      setErrors({ submit: 'Please choose a valid payment method.' });
     } catch (error) {
       setErrors({ submit: error.message || 'Registration failed. Please try again.' });
       setStep('form');
@@ -505,6 +575,27 @@ export default function EventRegister() {
                 </div>
 
                 <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
+                  {tournament.entryFee > 0 && (
+                    <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                      <p className="text-xs font-semibold text-gray-300">Payment Method</p>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('razorpay')}
+                          className={`rounded-md px-3 py-1 text-xs ${paymentMethod === 'razorpay' ? 'bg-arena-primary text-white' : 'bg-white/10 text-gray-300'}`}
+                        >
+                          Razorpay
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('stripe')}
+                          className={`rounded-md px-3 py-1 text-xs ${paymentMethod === 'stripe' ? 'bg-arena-primary text-white' : 'bg-white/10 text-gray-300'}`}
+                        >
+                          Stripe
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Entry Fee</span>
                     <span className="text-white">₹{tournament.entryFee.toLocaleString()}</span>
@@ -567,6 +658,25 @@ export default function EventRegister() {
                   <i className="ti ti-shield-check mr-1" />
                   Secure payment • Instant confirmation
                 </p>
+
+                {stripeClientSecret && paymentMethod === 'stripe' && pendingRegistrationId && (
+                  <div className="mt-4">
+                    <TournamentStripeForm
+                      registrationId={pendingRegistrationId}
+                      clientSecret={stripeClientSecret}
+                      amount={stripeAmount}
+                      onSuccess={(token) => {
+                        setQrToken(token);
+                        setStripeClientSecret('');
+                        setPendingRegistrationId('');
+                        setStep('success');
+                      }}
+                      onError={(message) => {
+                        setErrors({ submit: message || 'Stripe payment failed' });
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

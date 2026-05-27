@@ -9,9 +9,11 @@ import { connectDB } from './config/db.js'
 import adminRoutes from './routes/adminRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
+import paymentRoutes from './routes/paymentRoutes.js'
 import productRoutes from './routes/productRoutes.js'
 import tournamentRoutes from './routes/tournamentRoutes.js'
 import walletRoutes from './routes/walletRoutes.js'
+import { handleRazorpayWebhook, handleStripeWebhook } from './controllers/paymentController.js'
 import { errorMiddleware } from './middleware/errorMiddleware.js'
 
 dotenv.config()
@@ -34,14 +36,30 @@ const authLimiter = rateLimit({
 
 app.use(helmet())
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }))
+app.post('/api/payment/razorpay/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
+  req.rawBody = req.body
+  next()
+}, handleRazorpayWebhook)
+app.post('/api/payment/stripe/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
+  req.rawBody = req.body
+  next()
+}, handleStripeWebhook)
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
-app.use('/api', apiLimiter)
-app.use('/api/auth', authLimiter, authRoutes)
+// Apply rate limiting only in production to avoid 429s during local development
+if (process.env.NODE_ENV === 'production') {
+  app.use('/api', apiLimiter)
+  app.use('/api/auth', authLimiter, authRoutes)
+} else {
+  // In development register auth routes without rate limits
+  app.use('/api/auth', authRoutes)
+}
+
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
+app.use('/api/payment', paymentRoutes)
 app.use('/api/tournaments', tournamentRoutes)
 app.use('/api/wallet', walletRoutes)
 app.use('/api/admin', adminRoutes)

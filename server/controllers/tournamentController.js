@@ -1,23 +1,16 @@
 // server/controllers/tournamentController.js
-import crypto from 'crypto'
 import { validationResult } from 'express-validator'
 import Registration from '../models/Registration.js'
 import Team from '../models/Team.js'
 import Tournament from '../models/Tournament.js'
 import { createError } from '../middleware/errorMiddleware.js'
-import { creditFixedNXL } from '../services/nxlService.js'
+import { creditFixedNXL, deductNXL } from '../services/nxlService.js'
 import { generateQRDataURL, generateQRToken } from '../services/qrService.js'
 import { sendQRPassEmail } from '../services/emailService.js'
 
 const throwIfInvalid = (req) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) throw createError(422, 'Validation failed', errors.array().map((error) => error.msg))
-}
-
-const verifyRazorpay = ({ razorpay_order_id, razorpay_payment_id, razorpay_signature }) => {
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) throw createError(400, 'Payment verification failed')
-  const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '').update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex')
-  if (expected !== razorpay_signature) throw createError(400, 'Payment verification failed')
 }
 
 export const getAllTournaments = async (req, res, next) => {
@@ -136,28 +129,61 @@ export const registerForTournament = async (req, res, next) => {
       })
     }
 
-    if (tournament.entryFee > 0 && req.body.paymentMethod === 'razorpay') verifyRazorpay(req.body)
-    if (tournament.entryFee > 0 && req.body.paymentMethod === 'stripe' && !req.body.paymentId) throw createError(400, 'Payment not completed')
+    let qrToken
+    let paymentStatus = 'pending'
+    let paymentId
+    let paymentMethod = req.body.paymentMethod
+    let paidAt
+    let nxlUsed = 0
+    if (!tournament.entryFee || tournament.entryFee <= 0) {
+      qrToken = await generateQRToken()
+      paymentStatus = 'paid'
+      paymentMethod = 'nxl'
+      paymentId = `FREE-${Date.now()}`
+      paidAt = new Date()
+    } else if (paymentMethod === 'nxl') {
+      const userNxl = Number(req.user.nxlCredits || 0)
+      if (userNxl < tournament.entryFee) throw createError(400, `Insufficient NXL credits. Available: ${userNxl}`)
+      await deductNXL(req.user._id, tournament.entryFee, `NXL payment for tournament ${tournament.name}`, tournament._id)
+      nxlUsed = tournament.entryFee
+      qrToken = await generateQRToken()
+      paymentStatus = 'paid'
+      paymentId = `NXL-${Date.now()}`
+      paidAt = new Date()
+    }
 
-    const qrToken = await generateQRToken()
     const registration = await Registration.create({
       user: req.user._id,
       tournament: tournament._id,
       team: team?._id,
       type: tournament.format === 'solo' ? 'solo' : 'team',
-      paymentId: req.body.paymentId || req.body.razorpay_payment_id,
-      paymentStatus: 'paid',
-      qrToken,
+      paymentMethod,
+      paymentId,
+      paymentStatus,
+      nxlUsed,
+      paidAt,
+      qrToken: qrToken || undefined,
     })
 
-    await Promise.all([
-      Tournament.updateOne({ _id: tournament._id }, { $inc: { filledSlots: 1 } }),
-      tournament.nxlReward ? creditFixedNXL(req.user._id, tournament.nxlReward, `NXL earned - ${tournament.name} registration`, tournament._id) : Promise.resolve(),
-      generateQRDataURL(qrToken),
-    ])
-    sendQRPassEmail(req.user.email, registration, tournament)
+    if (paymentStatus === 'paid') {
+      await Promise.all([
+        Tournament.updateOne({ _id: tournament._id }, { $inc: { filledSlots: 1 } }),
+        tournament.nxlReward ? creditFixedNXL(req.user._id, tournament.nxlReward, `NXL earned - ${tournament.name} registration`, tournament._id) : Promise.resolve(),
+        generateQRDataURL(qrToken),
+      ])
+      sendQRPassEmail(req.user.email, registration, tournament)
+    }
 
-    res.status(201).json({ success: true, data: { registration, qrToken } })
+    res.status(201).json({
+      success: true,
+      data: {
+        registration,
+        qrToken: registration.qrToken,
+        requiresPayment: paymentStatus !== 'paid',
+        amountDue: paymentStatus !== 'paid' ? tournament.entryFee : 0,
+      },
+      message: paymentStatus === 'paid' ? 'Registration completed' : 'Registration created. Complete payment.',
+    })
   } catch (error) {
     next(error)
   }

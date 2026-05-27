@@ -16,5 +16,7 @@ const walletTransactionSchema = new mongoose.Schema(
 )
 
 walletTransactionSchema.index({ user: 1, createdAt: -1 })
+walletTransactionSchema.index({ type: 1 })
+walletTransactionSchema.index({ reference: 1 })
 
 export default mongoose.model('WalletTransaction', walletTransactionSchema)

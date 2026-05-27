@@ -11,14 +11,24 @@ import Products from './pages/Products'
 import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
+import PaymentSuccess from './pages/PaymentSuccess'
+import PaymentFailed from './pages/PaymentFailed'
 import Events from './pages/Events'
 import EventDetail from './pages/EventDetail'
 import EventRegister from './pages/EventRegister'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import AdminLayout from './pages/AdminLayout'
-import AdminOverview from './pages/admin/AdminOverview'
+import AdminLayout from './layouts/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminProducts from './pages/admin/AdminProducts'
+import AdminOrders from './pages/admin/AdminOrders'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminTournaments from './pages/admin/AdminTournaments'
+import AdminCoupons from './pages/admin/AdminCoupons'
+import AdminWallet from './pages/admin/AdminWallet'
+import AdminQRScanner from './pages/admin/AdminQRScanner'
+import AdminAnalytics from './pages/admin/AdminAnalytics'
 
 export default function App() {
   return (
@@ -48,6 +58,22 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/payment/success"
+            element={
+              <ProtectedRoute>
+                <PaymentSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment/failed"
+            element={
+              <ProtectedRoute>
+                <PaymentFailed />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
@@ -59,16 +85,22 @@ export default function App() {
             }
           />
           <Route
-            path="/admin/*"
+            path="/admin"
             element={
               <ProtectedRoute adminOnly>
                 <AdminLayout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<AdminOverview />} />
-            <Route path="products" element={<AdminOverview />} />
-            <Route path="events" element={<AdminOverview />} />
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="tournaments" element={<AdminTournaments />} />
+            <Route path="coupons" element={<AdminCoupons />} />
+            <Route path="wallet" element={<AdminWallet />} />
+            <Route path="qr-scanner" element={<AdminQRScanner />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
           </Route>
         </Routes>
       </BrowserRouter>

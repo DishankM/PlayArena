@@ -29,8 +29,6 @@ export default function Login() {
     }
   }, []);
 
-  const from = location.state?.from?.pathname || '/dashboard';
-
   const validateField = useCallback((name, value) => {
     let message = '';
     if (name === 'email') {
@@ -97,6 +95,10 @@ export default function Login() {
       dispatch(setCredentials({ user, token: accessToken }));
       localStorage.setItem('accessToken', accessToken);
       dispatch(setWallet({ balance: user.walletBalance || 0, nxlCredits: user.nxlCredits || 0 }));
+      
+      // Redirect based on user role
+      const defaultRedirect = user.role === 'admin' ? '/admin' : '/dashboard';
+      const from = location.state?.from?.pathname || defaultRedirect;
       navigate(from, { replace: true });
     } catch (error) {
       setFormError(error.message || 'Invalid email or password. Please try again.');

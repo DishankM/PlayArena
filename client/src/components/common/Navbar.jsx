@@ -127,12 +127,14 @@ export const Navbar = () => {
           {navLinks.map((link) => (
             <li key={link.to} className="relative">
               <NavLink to={link.to} end={link.end} className={navLinkClass}>
-                <span className="flex items-center gap-1">
-                  <i className={`${link.icon} text-base hidden lg:inline`} />
-                  {link.label}
-                </span>
-                {({ isActive }) => isActive && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-gradient-to-r from-arena-primary to-arena-gold" />
+                {({ isActive }) => (
+                  <span className="flex items-center gap-1">
+                    <i className={`${link.icon} text-base hidden lg:inline`} />
+                    {link.label}
+                    {isActive && (
+                      <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-gradient-to-r from-arena-primary to-arena-gold" />
+                    )}
+                  </span>
                 )}
               </NavLink>
             </li>
@@ -252,7 +254,7 @@ export const Navbar = () => {
                     </div>
                     
                     <Link
-                      to="/dashboard"
+                      to={user?.role === 'admin' ? '/admin' : '/dashboard'}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                       onClick={() => setUserMenuOpen(false)}
                     >
@@ -445,7 +447,7 @@ export const Navbar = () => {
               {isAuthenticated && (
                 <>
                   <Link
-                    to="/dashboard"
+                    to={user?.role === 'admin' ? '/admin' : '/dashboard'}
                     className="flex items-center gap-3 rounded-lg px-4 py-3 text-base text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                     onClick={() => setMobileOpen(false)}
                   >

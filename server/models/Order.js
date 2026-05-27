@@ -28,6 +28,10 @@ const orderSchema = new mongoose.Schema(
       enum: ['razorpay', 'stripe', 'wallet', 'nxl'],
     },
     paymentId: String,
+    razorpayOrderId: String,
+    stripePaymentIntentId: String,
+    paidAt: Date,
+    partialNxlApplied: { type: Boolean, default: false },
     paymentStatus: {
       type: String,
       enum: ['pending', 'paid', 'failed'],
@@ -40,11 +44,22 @@ const orderSchema = new mongoose.Schema(
     },
     couponCode: String,
     invoiceUrl: String,
+    refundStatus: {
+      type: String,
+      enum: ['none', 'initiated', 'processed'],
+      default: 'none',
+    },
+    refundReason: String,
   },
   { timestamps: true }
 )
 
 orderSchema.index({ user: 1, createdAt: -1 })
-orderSchema.index({ paymentStatus: 1, orderStatus: 1 })
+orderSchema.index({ paymentStatus: 1 })
+orderSchema.index({ orderStatus: 1 })
+orderSchema.index({ createdAt: -1 })
+orderSchema.index({ 'items.product': 1 })
+orderSchema.index({ razorpayOrderId: 1 }, { sparse: true })
+orderSchema.index({ stripePaymentIntentId: 1 }, { sparse: true })
 
 export default mongoose.model('Order', orderSchema)

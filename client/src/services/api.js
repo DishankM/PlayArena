@@ -55,5 +55,6 @@ export const orderAPI = createAPI('/orders')
 export const tournamentAPI = createAPI('/tournaments')
 export const walletAPI = createAPI('/wallet')
 export const adminAPI = createAPI('/admin')
+export const paymentAPI = createAPI('/payment')
 
 export default api

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { EventCard } from '../events/EventCard';
 import { tournamentAPI } from '../../services/api';
+import { mockTournaments } from '../../data/mockData';
 import { getSlotPercent } from '../../utils/helpers';
 
 const prizePoolStats = [
@@ -21,7 +22,13 @@ export const FeaturedTournaments = () => {
     tournamentAPI
       .get('/upcoming')
       .then((res) => {
-        if (mounted) setUpcoming((res.data.data.tournaments || []).slice(0, 4));
+        const list = res.data.data.tournaments || [];
+        if (mounted) setUpcoming(list.length ? list.slice(0, 4) : mockTournaments.slice(0, 4));
+      })
+      .catch((err) => {
+        // If API fails (dev server not running), fallback to local mock data
+        console.warn('Failed to load upcoming tournaments, using mock data', err?.message || err)
+        if (mounted) setUpcoming(mockTournaments.slice(0, 4))
       })
       .finally(() => mounted && setLoading(false));
     return () => {

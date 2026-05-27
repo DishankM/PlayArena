@@ -41,7 +41,14 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-productSchema.index({ name: 1, description: 1 })
-productSchema.index({ category: 1, sport: 1, isActive: 1 })
+productSchema.index({ category: 1, sport: 1 })
+productSchema.index({ 'ratings.average': -1 })
+productSchema.index({ isFeatured: 1, isActive: 1 })
+productSchema.index({ price: 1 })
+productSchema.index({ createdAt: -1 })
+productSchema.index(
+  { name: 'text', description: 'text' },
+  { weights: { name: 10, description: 5 } }
+)
 
 export default mongoose.model('Product', productSchema)
