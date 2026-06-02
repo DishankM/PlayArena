@@ -1,4 +1,4 @@
-# SportAEvent
+# PlayArena
 
 A full-stack sports event booking application with a React/Vite client and an Express/MongoDB server.
 
