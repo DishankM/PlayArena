@@ -1,4 +1,3 @@
-// client/src/components/common/Badge.jsx
 
 /**
  * @param {{ variant?: string, className?: string, children: import('react').ReactNode }} props

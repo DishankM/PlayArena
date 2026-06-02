@@ -1,4 +1,3 @@
-// server/controllers/walletController.js
 import { validationResult } from 'express-validator'
 import WalletTransaction from '../models/WalletTransaction.js'
 import { createError } from '../middleware/errorMiddleware.js'
@@ -47,8 +46,8 @@ export const getTransactionHistory = async (req, res, next) => {
 export const validateQR = async (req, res, next) => {
   try {
     throwIfInvalid(req)
-    const result = await validateQRToken(req.body.qrToken)
-    res.status(result.valid ? 200 : 400).json({ success: result.valid, data: result, message: result.message })
+    const result = await validateQRToken(req.body.qrToken, req.user._id, req.body.tournamentId)
+    res.status(200).json({ success: true, data: result, message: result.message })
   } catch (error) {
     next(error)
   }

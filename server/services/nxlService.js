@@ -1,4 +1,3 @@
-// server/services/nxlService.js
 import User from '../models/User.js'
 import WalletTransaction from '../models/WalletTransaction.js'
 import { createError } from '../middleware/errorMiddleware.js'

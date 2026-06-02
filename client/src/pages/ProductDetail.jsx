@@ -7,13 +7,16 @@ import { Footer } from '../components/common/Footer'
 import { StarRating } from '../components/common/StarRating'
 import { ProductCard } from '../components/products/ProductCard'
 import { addToCart } from '../store/slices/cartSlice'
-import { productAPI } from '../services/api'
+import { setCredentials } from '../store/slices/authSlice'
+import { authAPI, productAPI } from '../services/api'
+import useToast from '../hooks/useToast'
 import {
   formatPrice,
   calculateNXL,
   isNewProduct,
   getDiscountPercent,
 } from '../utils/helpers'
+import { isInWishlist } from '../utils/wishlist'
 
 const sportIcons = {
   badminton: 'ti-trophy',
@@ -45,7 +48,8 @@ export default function ProductDetail() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
+  const toast = useToast()
+  const { isAuthenticated, user, token } = useSelector((state) => state.auth)
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
@@ -54,7 +58,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [descOpen, setDescOpen] = useState(true)
-  const [wishlisted, setWishlisted] = useState(false)
+  const [wishlistSaving, setWishlistSaving] = useState(false)
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewTitle, setReviewTitle] = useState('')
   const [reviewBody, setReviewBody] = useState('')
@@ -137,6 +141,7 @@ export default function ProductDetail() {
   const imageList = images || []
   const thumbs = imageList.length ? imageList : [null, null, null]
   const reviews = product.reviews?.length ? product.reviews : mockReviews
+  const wishlisted = isInWishlist(user?.wishlist, _id)
 
   const handleAddToCart = () => {
     dispatch(addToCart({
@@ -155,7 +160,24 @@ export default function ProductDetail() {
     navigate('/checkout')
   }
 
-  const handleToggleWishlist = () => setWishlisted((w) => !w)
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to save items')
+      navigate('/login')
+      return
+    }
+
+    setWishlistSaving(true)
+    try {
+      const res = await authAPI.patch(`/wishlist/${_id}`)
+      dispatch(setCredentials({ user: res.data.data.user, token }))
+      toast.success(res.data.message)
+    } catch (error) {
+      toast.error(error.message || 'Could not update wishlist')
+    } finally {
+      setWishlistSaving(false)
+    }
+  }
   const handleDecreaseQty = () => setQuantity((q) => Math.max(1, q - 1))
   const handleIncreaseQty = () => setQuantity((q) => Math.min(stock || 99, q + 1))
 
@@ -276,9 +298,9 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            <button onClick={handleToggleWishlist} className="mt-4 flex items-center gap-2 text-sm text-gray-400 hover:text-sky-400">
+            <button onClick={handleToggleWishlist} disabled={wishlistSaving} className="mt-4 flex items-center gap-2 text-sm text-gray-400 hover:text-sky-400 disabled:cursor-not-allowed disabled:opacity-60">
               <i className={`ti ti-heart ${wishlisted ? 'text-red-500' : ''}`} />
-              {wishlisted ? 'Saved to wishlist' : 'Add to Wishlist'}
+              {wishlistSaving ? 'Updating...' : wishlisted ? 'Saved to wishlist' : 'Add to Wishlist'}
             </button>
 
             {/* Delivery Info */}

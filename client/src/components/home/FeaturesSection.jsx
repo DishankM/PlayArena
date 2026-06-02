@@ -1,5 +1,3 @@
-// client/src/components/home/FeaturesSection.jsx
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -26,7 +24,7 @@ const features = [
     desc: 'Earn credits on every purchase and registration. Redeem 1:1 against orders and entry fees.',
     highlight: '1 Credit = ₹1',
     gradient: 'from-green-500 to-emerald-600',
-    link: '/rewards',
+    link: '/dashboard',
   },
   {
     icon: 'ti-qrcode',
@@ -42,7 +40,7 @@ const features = [
     desc: 'Razorpay, Stripe, wallet, and NXL — PCI-compliant checkout with instant receipts.',
     highlight: 'PCI Compliant',
     gradient: 'from-purple-500 to-purple-600',
-    link: '/wallet',
+    link: '/dashboard',
   },
   {
     icon: 'ti-map-pin',

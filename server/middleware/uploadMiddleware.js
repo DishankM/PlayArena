@@ -1,4 +1,3 @@
-// server/middleware/uploadMiddleware.js
 import multer from 'multer'
 import { v2 as cloudinary } from 'cloudinary'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
@@ -35,3 +34,9 @@ export const uploadAvatar = multer({
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter,
 }).single('avatar')
+
+export const uploadTournamentPoster = multer({
+  storage: createStorage('playarena/tournaments', ['jpg', 'jpeg', 'png', 'webp']),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter,
+}).single('poster')

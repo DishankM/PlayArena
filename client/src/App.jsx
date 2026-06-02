@@ -1,14 +1,17 @@
 // client/src/App.jsx
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { store } from './store'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 
 import Home from './pages/Home'
 import About from './pages/About'
 import Products from './pages/Products'
 import ProductDetail from './pages/ProductDetail'
+import Wishlist from './pages/Wishlist'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import PaymentSuccess from './pages/PaymentSuccess'
@@ -29,12 +32,42 @@ import AdminCoupons from './pages/admin/AdminCoupons'
 import AdminWallet from './pages/admin/AdminWallet'
 import AdminQRScanner from './pages/admin/AdminQRScanner'
 import AdminAnalytics from './pages/admin/AdminAnalytics'
+import NetworkError from './pages/NetworkError'
+import NotFound from './pages/NotFound'
 
 export default function App() {
+  const [networkError, setNetworkError] = useState(
+    typeof navigator !== 'undefined' ? !navigator.onLine : false
+  )
+
+  useEffect(() => {
+    const showNetworkError = () => setNetworkError(true)
+    const clearNetworkError = () => setNetworkError(false)
+
+    window.addEventListener('offline', showNetworkError)
+    window.addEventListener('api-network-error', showNetworkError)
+    window.addEventListener('online', clearNetworkError)
+
+    return () => {
+      window.removeEventListener('offline', showNetworkError)
+      window.removeEventListener('api-network-error', showNetworkError)
+      window.removeEventListener('online', clearNetworkError)
+    }
+  }, [])
+
   return (
     <Provider store={store}>
-      <BrowserRouter>
-        <Routes>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <ErrorBoundary>
+          {networkError ? (
+            <NetworkError />
+          ) : (
+            <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/events" element={<Events />} />
@@ -49,6 +82,14 @@ export default function App() {
           />
           <Route path="/store" element={<Products />} />
           <Route path="/store/:slug" element={<ProductDetail />} />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <Wishlist />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/cart" element={<Cart />} />
           <Route
             path="/checkout"
@@ -84,6 +125,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/orders" element={<Navigate to="/dashboard?tab=orders" replace />} />
+          <Route path="/wallet" element={<Navigate to="/dashboard?tab=wallet" replace />} />
+          <Route path="/settings" element={<Navigate to="/dashboard?tab=profile" replace />} />
           <Route
             path="/admin"
             element={
@@ -102,7 +146,10 @@ export default function App() {
             <Route path="qr-scanner" element={<AdminQRScanner />} />
             <Route path="analytics" element={<AdminAnalytics />} />
           </Route>
-        </Routes>
+          <Route path="*" element={<NotFound />} />
+            </Routes>
+          )}
+        </ErrorBoundary>
       </BrowserRouter>
     </Provider>
   )

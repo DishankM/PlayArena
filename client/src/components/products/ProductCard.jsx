@@ -2,22 +2,29 @@
 
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { addToCart } from '../../store/slices/cartSlice';
+import { setCredentials } from '../../store/slices/authSlice';
+import { authAPI } from '../../services/api';
 import { isNewProduct, calculateNXL } from '../../utils/helpers';
+import { isInWishlist } from '../../utils/wishlist';
 import { StarRating } from '../common/StarRating';
+import useToast from '../../hooks/useToast';
 
 /**
- * @param {{ product: object }} props
+ * @param {{ product: object, showWishlistRemove?: boolean }} props
  */
-export const ProductCard = ({ product }) => {
+export const ProductCard = ({ product, showWishlistRemove = false }) => {
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth.user);
+  const navigate = useNavigate();
+  const toast = useToast();
+  const { isAuthenticated, user, token } = useSelector((state) => state.auth);
   const wishlist = user?.wishlist || [];
-  const isWishlisted = wishlist.includes(product._id);
+  const isWishlisted = isInWishlist(wishlist, product._id);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [wishlistSaving, setWishlistSaving] = useState(false);
 
   const {
     _id,
@@ -56,8 +63,23 @@ export const ProductCard = ({ product }) => {
     }
   };
 
-  const handleToggleWishlist = () => {
-    console.log('Toggle wishlist for product:', _id);
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to save items')
+      navigate('/login')
+      return
+    }
+
+    setWishlistSaving(true)
+    try {
+      const res = await authAPI.patch(`/wishlist/${_id}`)
+      dispatch(setCredentials({ user: res.data.data.user, token }))
+      toast.success(res.data.message)
+    } catch (error) {
+      toast.error(error.message || 'Could not update wishlist')
+    } finally {
+      setWishlistSaving(false)
+    }
   };
 
   const showNew = createdAt && isNewProduct(createdAt);
@@ -128,6 +150,7 @@ export const ProductCard = ({ product }) => {
         <button
           type="button"
           onClick={handleToggleWishlist}
+          disabled={wishlistSaving}
           className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/50 backdrop-blur transition-all hover:scale-110 hover:border-sky-500 hover:bg-sky-500/20"
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         >
@@ -239,6 +262,18 @@ export const ProductCard = ({ product }) => {
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
           )}
         </button>
+
+        {showWishlistRemove && isWishlisted && (
+          <button
+            type="button"
+            onClick={handleToggleWishlist}
+            disabled={wishlistSaving}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-500/10 py-2 text-sm font-semibold text-red-300 transition-all hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <i className="ti ti-heart-minus text-sm" />
+            {wishlistSaving ? 'Removing...' : 'Remove from Wishlist'}
+          </button>
+        )}
 
         {/* Free Shipping Indicator */}
         {price >= 999 && !isOutOfStock && (

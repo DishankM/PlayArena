@@ -1,4 +1,3 @@
-// server/middleware/errorMiddleware.js
 export const createError = (statusCode, message, errors) => {
   const error = new Error(message)
   error.statusCode = statusCode
@@ -20,7 +19,13 @@ export const errorMiddleware = (err, _req, res, _next) => {
   if (err.code === 11000) {
     statusCode = 409
     const field = Object.keys(err.keyValue || {})[0] || 'field'
-    message = `${field} already exists`
+    if (field === 'qrToken') {
+      message = 'Registration payment is pending. Please try again after refreshing the page.'
+    } else if (field === 'user') {
+      message = 'You already have a registration for this tournament.'
+    } else {
+      message = `${field} already exists`
+    }
   }
 
   if (err.name === 'JsonWebTokenError') {

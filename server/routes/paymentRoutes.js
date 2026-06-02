@@ -1,4 +1,3 @@
-// server/routes/paymentRoutes.js
 import express from 'express'
 import { isAdmin, protect } from '../middleware/authMiddleware.js'
 import {

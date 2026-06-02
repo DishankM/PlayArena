@@ -27,8 +27,11 @@ const usePayment = () => {
     try {
       const loaded = await loadRazorpayScript()
       if (!loaded) throw new Error('Failed to load Razorpay. Check your internet connection.')
-      const { data: createRes } = await paymentAPI.post('/razorpay/create-order', { orderId })
-      const { razorpayOrderId, amount, currency, keyId } = createRes.data.data
+      const { data: body } = await paymentAPI.post('/razorpay/create-order', { orderId })
+      if (!body?.data?.razorpayOrderId) {
+        throw new Error(body?.message || 'Could not create Razorpay order. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in server/.env')
+      }
+      const { razorpayOrderId, amount, currency, keyId } = body.data
 
       return await new Promise((resolve, reject) => {
         const rzp = new window.Razorpay({
@@ -48,7 +51,7 @@ const usePayment = () => {
           },
           handler: async (response) => {
             try {
-              const { data: verifyRes } = await paymentAPI.post('/razorpay/verify', {
+              const { data: verifyBody } = await paymentAPI.post('/razorpay/verify', {
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
@@ -57,9 +60,9 @@ const usePayment = () => {
               dispatch(clearCart())
               setProcessing(false)
               navigate('/payment/success', {
-                state: { orderId, invoiceUrl: verifyRes.data.invoiceUrl, paymentMethod: 'razorpay' },
+                state: { orderId, invoiceUrl: verifyBody.data?.invoiceUrl, paymentMethod: 'razorpay' },
               })
-              resolve(verifyRes.data)
+              resolve(verifyBody.data)
             } catch (verifyError) {
               setProcessing(false)
               navigate('/payment/failed', { state: { orderId, reason: verifyError.message } })

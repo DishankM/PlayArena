@@ -24,6 +24,8 @@ const emptyForm = {
   nxlReward: 50,
   status: 'open',
   rules: [''],
+  posterFile: null,
+  posterPreview: '',
 }
 
 export default function AdminTournaments() {
@@ -85,18 +87,52 @@ export default function AdminTournaments() {
     }
     setSaving(true)
     try {
-      const payload = { ...form, rules, maxSlots: Number(form.maxSlots), entryFee: Number(form.entryFee), nxlReward: Number(form.nxlReward) }
+      const formData = new FormData()
+      formData.append('name', form.name)
+      formData.append('description', form.description)
+      formData.append('sport', form.sport)
+      formData.append('type', form.type)
+      formData.append('format', form.format)
+      formData.append('startDate', form.startDate)
+      formData.append('endDate', form.endDate)
+      formData.append('venue', form.venue)
+      formData.append('maxSlots', Number(form.maxSlots))
+      formData.append('entryFee', Number(form.entryFee))
+      formData.append('prize', form.prize)
+      formData.append('nxlReward', Number(form.nxlReward))
+      formData.append('status', form.status)
+      formData.append('rules', JSON.stringify(rules))
+      if (form.posterFile) {
+        formData.append('poster', form.posterFile)
+      }
+      
       if (editItem) {
-        await tournamentAPI.patch(`/${editItem._id}`, payload)
+        await tournamentAPI.patch(`/${editItem._id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
       } else {
-        await tournamentAPI.post('/', payload)
+        await tournamentAPI.post('/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
       }
       setModalOpen(false)
+      setForm(emptyForm)
       fetchTournaments()
     } catch (err) {
       setError(err.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDelete = async (tournament) => {
+    if (!window.confirm(`Are you sure you want to delete tournament "${tournament.name}"?`)) return
+    try {
+      setError('')
+      await tournamentAPI.delete(`/${tournament._id}`)
+      fetchTournaments()
+    } catch (err) {
+      setError(err.message || 'Failed to delete tournament')
     }
   }
 
@@ -191,7 +227,22 @@ export default function AdminTournaments() {
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     <button className="rounded-xl border border-white/20 bg-white/5 px-3 py-1 text-sm text-gray-300" onClick={() => openRegistrations(t)}>Regs</button>
-                    <button className="text-amber-400" onClick={() => { setEditItem(t); setForm({ ...emptyForm, ...t }); setModalOpen(true); }}>Edit</button>
+                    <button
+                      className="text-amber-400 text-sm font-medium"
+                      onClick={() => {
+                        setEditItem(t)
+                        setForm({ ...emptyForm, ...t, startDate: t.startDate?.slice(0, 16), endDate: t.endDate?.slice(0, 16) || '', rules: t.rules?.length ? t.rules : [''] })
+                        setModalOpen(true)
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="text-red-400 text-sm font-medium ml-2"
+                      onClick={() => handleDelete(t)}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))
@@ -261,6 +312,13 @@ export default function AdminTournaments() {
                         }}>
                           <i className="ti ti-edit text-lg" />
                         </button>
+                        <button
+                          type="button"
+                          className="text-red-400 transition-all hover:scale-110"
+                          onClick={() => handleDelete(t)}
+                        >
+                          <i className="ti ti-trash text-lg" />
+                        </button>
                         <select
                           className="rounded-xl border border-white/20 bg-white/5 px-2 py-1 text-xs text-white focus:border-sky-500 focus:outline-none"
                           value={t.status}
@@ -295,16 +353,50 @@ export default function AdminTournaments() {
             </div>
             
             <div className="space-y-4">
-              <input className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              <textarea className="min-h-[80px] w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-300">Tournament Image</label>
+                <div className="relative">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    id="tournamentImage"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        const reader = new FileReader()
+                        reader.onload = (e) => setForm({ ...form, posterPreview: e.target?.result, posterFile: file })
+                        reader.readAsDataURL(file)
+                      }
+                    }}
+                  />
+                  <label htmlFor="tournamentImage" className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-6 transition hover:border-sky-500 hover:bg-sky-500/10">
+                    {form.posterPreview || editItem?.poster ? (
+                      <div className="flex flex-col items-center">
+                        <img src={form.posterPreview || editItem?.poster} alt="Tournament" className="max-h-24 rounded" />
+                        <p className="mt-2 text-xs text-gray-300">Click to change image</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <i className="ti ti-photo text-3xl text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-300">Click to upload tournament image</p>
+                        <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
               
-              <select className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white focus:border-sky-500 focus:outline-none" value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })}>
+              <input className="w-full rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-sky-500 focus:outline-none" placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <textarea className="min-h-[80px] w-full rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-sky-500 focus:outline-none" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              
+              <select className="w-full rounded-xl border border-white/30 bg-slate-800 px-4 py-2.5 text-white focus:border-sky-500 focus:outline-none" value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })}>
                 {SPORTS.map((s) => (<option key={s}>{s}</option>))}
               </select>
               
               <div className="grid gap-2 sm:grid-cols-2">
                 {['indoor', 'outdoor'].map((type) => (
-                  <label key={type} className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-3 capitalize transition-all ${form.type === type ? 'border-sky-500 bg-sky-500/10 text-sky-400' : 'border-white/20 text-gray-300'}`}>
+                  <label key={type} className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-3 capitalize transition-all ${form.type === type ? 'border-sky-500 bg-sky-500/10 text-sky-400' : 'border-white/30 text-gray-300'}`}>
                     <input type="radio" className="sr-only" checked={form.type === type} onChange={() => setForm({ ...form, type })} />
                     <i className={`ti ${type === 'indoor' ? 'ti-building' : 'ti-sun'}`} />
                     {type}
@@ -314,7 +406,7 @@ export default function AdminTournaments() {
               
               <div className="grid gap-2 sm:grid-cols-3">
                 {['solo', 'team', 'doubles'].map((format) => (
-                  <label key={format} className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-3 capitalize transition-all ${form.format === format ? 'border-sky-500 bg-sky-500/10 text-sky-400' : 'border-white/20 text-gray-300'}`}>
+                  <label key={format} className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-3 capitalize transition-all ${form.format === format ? 'border-sky-500 bg-sky-500/10 text-sky-400' : 'border-white/30 text-gray-300'}`}>
                     <input type="radio" className="sr-only" checked={form.format === format} onChange={() => setForm({ ...form, format })} />
                     <i className={`ti ${format === 'solo' ? 'ti-user' : 'ti-users'}`} />
                     {format}
@@ -323,25 +415,25 @@ export default function AdminTournaments() {
               </div>
               
               <div className="grid gap-3 sm:grid-cols-2">
-                <input type="datetime-local" className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white focus:border-sky-500 focus:outline-none" required value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
-                <input type="datetime-local" className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white focus:border-sky-500 focus:outline-none" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
+                <input type="datetime-local" className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white focus:border-sky-500 focus:outline-none" required value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+                <input type="datetime-local" className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white focus:border-sky-500 focus:outline-none" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
               </div>
               
-              <input className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="Venue" value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} />
+              <input className="w-full rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-sky-500 focus:outline-none" placeholder="Venue" value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} />
               
               <div className="grid gap-3 sm:grid-cols-2">
-                <input type="number" className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="Max slots" value={form.maxSlots} onChange={(e) => setForm({ ...form, maxSlots: e.target.value })} />
-                <input type="number" className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="Entry fee" value={form.entryFee} onChange={(e) => setForm({ ...form, entryFee: e.target.value })} />
+                <input type="number" className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-sky-500 focus:outline-none" placeholder="Max slots" value={form.maxSlots} onChange={(e) => setForm({ ...form, maxSlots: e.target.value })} />
+                <input type="number" className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-sky-500 focus:outline-none" placeholder="Entry fee" value={form.entryFee} onChange={(e) => setForm({ ...form, entryFee: e.target.value })} />
               </div>
               
               <div className="grid gap-3 sm:grid-cols-2">
-                <input className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="Prize" value={form.prize} onChange={(e) => setForm({ ...form, prize: e.target.value })} />
-                <input type="number" className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="NXL reward" value={form.nxlReward} onChange={(e) => setForm({ ...form, nxlReward: e.target.value })} />
+                <input className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-sky-500 focus:outline-none" placeholder="Prize" value={form.prize} onChange={(e) => setForm({ ...form, prize: e.target.value })} />
+                <input type="number" className="rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-sky-500 focus:outline-none" placeholder="NXL reward" value={form.nxlReward} onChange={(e) => setForm({ ...form, nxlReward: e.target.value })} />
               </div>
               
               {form.rules.map((rule, i) => (
                 <div key={i} className="flex gap-2">
-                  <input className="flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none" value={rule} onChange={(e) => {
+                  <input className="flex-1 rounded-xl border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-sky-500 focus:outline-none" value={rule} onChange={(e) => {
                     const rules = [...form.rules]
                     rules[i] = e.target.value
                     setForm({ ...form, rules })

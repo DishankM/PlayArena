@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { Navbar } from '../components/common/Navbar'
 import { Footer } from '../components/common/Footer'
-import { logout } from '../store/slices/authSlice'
-import { orderAPI, tournamentAPI, walletAPI } from '../services/api'
+import { QRPassCard } from '../components/events/QRPassCard'
+import { ProductCard } from '../components/products/ProductCard'
+import useToast from '../hooks/useToast'
+import { logout, setCredentials } from '../store/slices/authSlice'
+import { authAPI, orderAPI, tournamentAPI, walletAPI } from '../services/api'
 import {
   formatPrice,
   formatDate,
   getInitials,
   getNxlTier,
 } from '../utils/helpers'
+import { getWishlistProducts } from '../utils/wishlist'
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: 'ti-layout-dashboard' },
@@ -33,22 +37,31 @@ const glassCard = 'rounded-2xl border border-white/10 bg-white/[0.04] shadow-xl 
 export default function Dashboard() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const toast = useToast()
   const user = useSelector((state) => state.auth.user) || {}
+  const token = useSelector((state) => state.auth.token)
   const wallet = useSelector((state) => state.wallet)
   const [orders, setOrders] = useState([])
   const [transactions, setTransactions] = useState([])
   const [registrations, setRegistrations] = useState([])
   const [walletSummary, setWalletSummary] = useState(null)
 
-  const [activeTab, setActiveTab] = useState('overview')
+  const initialTab = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(
+    navItems.some((item) => item.id === initialTab) ? initialTab : 'overview'
+  )
   const [expandedOrder, setExpandedOrder] = useState(null)
   const [qrModalOpen, setQrModalOpen] = useState(false)
-  const [qrModalToken, setQrModalToken] = useState('')
+  const [qrModalRegistration, setQrModalRegistration] = useState(null)
+  const [profileSaving, setProfileSaving] = useState(false)
   const [profile, setProfile] = useState({
     name: user.name || '',
     email: user.email || '',
     phone: user.phone || '',
-    ...user.address,
+    street: user.address?.street || '',
+    city: user.address?.city || '',
+    state: user.address?.state || '',
   })
 
   useEffect(() => {
@@ -62,18 +75,53 @@ export default function Dashboard() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    const nextTab = searchParams.get('tab')
+    if (navItems.some((item) => item.id === nextTab) && nextTab !== activeTab) {
+      setActiveTab(nextTab)
+    }
+  }, [searchParams, activeTab])
+
   const walletBalance = walletSummary?.walletBalance ?? wallet.balance ?? 0
   const nxlCredits = walletSummary?.nxlCredits ?? wallet.nxlCredits ?? 0
   const tier = getNxlTier(nxlCredits)
+  const wishlistProducts = getWishlistProducts(user.wishlist)
 
   const handleSignOut = () => {
     dispatch(logout())
     navigate('/login')
   }
 
-  const handleOpenQr = (token) => {
-    setQrModalToken(token)
+  const handleOpenQr = (registration) => {
+    setQrModalRegistration(registration)
     setQrModalOpen(true)
+  }
+
+  const handleCloseQr = () => {
+    setQrModalOpen(false)
+    setQrModalRegistration(null)
+  }
+
+  const handleSaveProfile = async (event) => {
+    event.preventDefault()
+    setProfileSaving(true)
+    try {
+      const res = await authAPI.patch('/update-profile', {
+        name: profile.name.trim(),
+        phone: profile.phone.trim(),
+        address: {
+          street: profile.street.trim(),
+          city: profile.city.trim(),
+          state: profile.state.trim(),
+        },
+      })
+      dispatch(setCredentials({ user: res.data.data.user, token }))
+      toast.success(res.data.message || 'Profile updated')
+    } catch (error) {
+      toast.error(error.message || 'Could not update profile')
+    } finally {
+      setProfileSaving(false)
+    }
   }
 
   const Sidebar = () => (
@@ -92,7 +140,10 @@ export default function Dashboard() {
           <button
             key={item.id}
             type="button"
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => {
+              setActiveTab(item.id)
+              setSearchParams(item.id === 'overview' ? {} : { tab: item.id })
+            }}
             className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium transition-all ${
               activeTab === item.id
                 ? 'bg-gradient-to-r from-sky-500/20 to-violet-500/20 text-sky-400'
@@ -226,7 +277,7 @@ export default function Dashboard() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-300">
-                  {order.items.map((i) => `${i.name} ×${i.quantity}`).join(', ')}
+                  {order.items.map((i) => `${i.name} x${i.quantity}`).join(', ')}
                 </p>
               </div>
               <div className="text-right">
@@ -249,20 +300,71 @@ export default function Dashboard() {
               View Details
             </button>
             {expandedOrder === order._id && (
-              <ul className="mt-4 border-t border-white/10 pt-4 text-sm text-gray-300">
-                {order.items.map((item, i) => (
-                  <li key={i} className="flex justify-between py-1">
-                    <span>{item.name} × {item.quantity}</span>
-                    <span>{formatPrice(item.price * item.quantity)}</span>
-                  </li>
-                ))}
-                {order.nxlEarned > 0 && (
-                  <li className="mt-2 flex items-center gap-1.5 text-amber-400">
-                    <i className="ti ti-coin" />
-                    Earned {order.nxlEarned} NXL on this order
-                  </li>
-                )}
-              </ul>
+              <div className="mt-4 space-y-4 border-t border-white/10 pt-4 text-sm text-gray-300">
+                <div>
+                  <p className="mb-2 font-semibold text-white">Items</p>
+                  <ul className="space-y-2">
+                    {order.items.map((item, i) => (
+                      <li key={i} className="flex justify-between gap-4">
+                        <span>{item.name} x {item.quantity}</span>
+                        <span className="shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-xl bg-white/5 p-4">
+                    <p className="font-semibold text-white">Shipping Address</p>
+                    <p className="mt-2 text-gray-400">
+                      {[
+                        order.shippingAddress?.street,
+                        order.shippingAddress?.city,
+                        order.shippingAddress?.state,
+                        order.shippingAddress?.pincode,
+                        order.shippingAddress?.country,
+                      ].filter(Boolean).join(', ') || 'No shipping address saved'}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-white/5 p-4">
+                    <p className="font-semibold text-white">Payment Details</p>
+                    <dl className="mt-2 space-y-1 text-gray-400">
+                      <div className="flex justify-between gap-3">
+                        <dt>Method</dt>
+                        <dd className="capitalize text-gray-300">{order.paymentMethod || 'N/A'}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt>Subtotal</dt>
+                        <dd className="text-gray-300">{formatPrice(order.subtotal || 0)}</dd>
+                      </div>
+                      {order.discount > 0 && (
+                        <div className="flex justify-between gap-3">
+                          <dt>Discount{order.couponCode ? ` (${order.couponCode})` : ''}</dt>
+                          <dd className="text-emerald-400">-{formatPrice(order.discount)}</dd>
+                        </div>
+                      )}
+                      {order.nxlUsed > 0 && (
+                        <div className="flex justify-between gap-3">
+                          <dt>NXL used</dt>
+                          <dd className="text-amber-400">-{formatPrice(order.nxlUsed)}</dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-3 border-t border-white/10 pt-2 font-semibold">
+                        <dt>Total</dt>
+                        <dd className="text-sky-400">{formatPrice(order.total)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {order.paidAt && <span className="rounded-full bg-white/5 px-2 py-1 text-gray-400">Paid {formatDate(order.paidAt)}</span>}
+                  {order.paymentId && <span className="rounded-full bg-white/5 px-2 py-1 text-gray-400">Payment ID: {order.paymentId}</span>}
+                  {order.invoiceUrl && (
+                    <a href={order.invoiceUrl} target="_blank" rel="noreferrer" className="rounded-full bg-sky-500/10 px-2 py-1 text-sky-400 hover:bg-sky-500/20">
+                      Download invoice
+                    </a>
+                  )}
+                </div>
+              </div>
             )}
           </article>
         ))}
@@ -374,11 +476,17 @@ export default function Dashboard() {
               </div>
               <button
                 type="button"
-                onClick={() => handleOpenQr(reg.qrToken)}
+                onClick={() => {
+                  if (reg.paymentStatus === 'paid') {
+                    handleOpenQr(reg)
+                  } else {
+                    navigate(`/events/${reg.tournament._id}/register`)
+                  }
+                }}
                 className="mt-3 flex items-center gap-2 rounded-xl bg-white/5 px-4 py-1.5 text-sm text-sky-400 transition-all hover:bg-white/10"
               >
-                <i className="ti ti-qrcode" />
-                QR Pass
+                <i className={`ti ${reg.paymentStatus === 'paid' ? 'ti-qrcode' : 'ti-credit-card'}`} />
+                {reg.paymentStatus === 'paid' ? 'QR Pass' : 'Complete Payment'}
               </button>
             </div>
           </article>
@@ -395,19 +503,27 @@ export default function Dashboard() {
     wishlist: () => (
       <>
         <h2 className="text-2xl font-bold text-white">Wishlist</h2>
-        <div className={`${glassCard} mt-6 py-16 text-center`}>
-          <i className="ti ti-heart text-5xl text-gray-600" />
-          <p className="mt-4 text-gray-400">Your wishlist is empty. Save items from the store.</p>
-          <button className="mt-4 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-6 py-2 font-semibold text-white">
-            Browse Store
-          </button>
-        </div>
+        {wishlistProducts.length > 0 ? (
+          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            {wishlistProducts.map((product) => (
+              <ProductCard key={product._id} product={product} showWishlistRemove />
+            ))}
+          </div>
+        ) : (
+          <div className={`${glassCard} mt-6 py-16 text-center`}>
+            <i className="ti ti-heart text-5xl text-gray-600" />
+            <p className="mt-4 text-gray-400">Your wishlist is empty. Save items from the store.</p>
+            <Link to="/store" className="mt-4 inline-flex rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-6 py-2 font-semibold text-white">
+              Browse Store
+            </Link>
+          </div>
+        )}
       </>
     ),
     profile: () => (
       <>
         <h2 className="text-2xl font-bold text-white">My Profile</h2>
-        <form className={`${glassCard} mt-6 grid gap-4 p-6 sm:grid-cols-2`}>
+        <form onSubmit={handleSaveProfile} className={`${glassCard} mt-6 grid gap-4 p-6 sm:grid-cols-2`}>
           <div className="sm:col-span-2">
             <label className="mb-1 block text-sm font-medium text-gray-300">Name</label>
             <input
@@ -452,8 +568,8 @@ export default function Dashboard() {
               className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-sky-400 focus:outline-none"
             />
           </div>
-          <button type="button" className="mt-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 py-2.5 font-semibold text-white transition-all hover:scale-[1.02] sm:col-span-2">
-            Save Changes
+          <button type="submit" disabled={profileSaving} className="mt-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 py-2.5 font-semibold text-white transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2">
+            {profileSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
         
@@ -493,17 +609,23 @@ export default function Dashboard() {
           <button
             type="button"
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-            onClick={() => setQrModalOpen(false)}
+            onClick={handleCloseQr}
           />
-          <div className="fixed left-1/2 top-1/2 z-50 w-[90%] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-[#0B1020] p-6 text-center shadow-2xl">
-            <h3 className="text-xl font-bold text-white">Your QR Pass</h3>
-            <div className="mx-auto mt-4 flex h-40 w-40 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-              <i className="ti ti-qrcode text-6xl text-sky-400" />
-            </div>
-            <p className="mt-4 font-mono text-xs text-amber-400 break-all">{qrModalToken}</p>
+          <div className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[92%] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1020] p-4 shadow-2xl">
+            {qrModalRegistration && (
+              <QRPassCard
+                registration={{
+                  ...qrModalRegistration,
+                  playerName: qrModalRegistration.playerName || user.name,
+                }}
+                tournament={qrModalRegistration.tournament}
+                qrDataUrl={qrModalRegistration.qrDataUrl}
+                qrToken={qrModalRegistration.qrToken}
+              />
+            )}
             <button
               type="button"
-              onClick={() => setQrModalOpen(false)}
+              onClick={handleCloseQr}
               className="mt-6 w-full rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 py-2.5 font-semibold text-white transition-all hover:scale-[1.02]"
             >
               Close

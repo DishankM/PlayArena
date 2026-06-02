@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
+import { getWishlistIds } from '../../utils/wishlist';
 import logo from '../../assets/logo.png';
 
 const navLinks = [
@@ -46,7 +47,7 @@ export const Navbar = () => {
 
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { itemCount } = useSelector((state) => state.cart);
-  const wishlistCount = user?.wishlist?.length || 0;
+  const wishlistCount = getWishlistIds(user?.wishlist).length;
   const nxlBalance = user?.nxlBalance || 0;
 
   useEffect(() => {
@@ -182,7 +183,7 @@ export const Navbar = () => {
           {/* NXL Balance (if authenticated) */}
           {isAuthenticated && nxlBalance > 0 && (
             <Link
-              to="/wallet"
+              to="/dashboard?tab=wallet"
               className="flex items-center gap-1.5 rounded-full bg-arena-gold/10 px-3 py-1.5 transition-all hover:bg-arena-gold/20"
             >
               <i className="ti ti-coin text-arena-gold text-sm" />
@@ -223,7 +224,7 @@ export const Navbar = () => {
             <button
               type="button"
               onClick={handleToggleUserMenu}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-arena-primary/20 to-arena-primary/10 text-gray-400 transition-all hover:scale-110 hover:text-white hover:shadow-lg"
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-gradient-to-r from-arena-primary/20 to-arena-primary/10 text-gray-400 shadow-sm transition-all hover:scale-110 hover:border-arena-primary/50 hover:text-white hover:shadow-lg"
               aria-label="User menu"
               aria-expanded={userMenuOpen}
             >
@@ -239,10 +240,10 @@ export const Navbar = () => {
             </button>
             
             {userMenuOpen && (
-              <div className="absolute right-0 mt-3 w-56 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-arena-navy to-arena-navy-deep py-2 shadow-2xl backdrop-blur-lg">
+              <div className="absolute right-0 mt-3 w-56 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-arena-navy to-arena-navy-deep p-2 shadow-2xl backdrop-blur-lg">
                 {isAuthenticated ? (
                   <>
-                    <div className="border-b border-white/10 px-4 py-3">
+                    <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                       <p className="text-sm font-semibold text-white">{user?.name}</p>
                       <p className="text-xs text-gray-400">{user?.email}</p>
                       <div className="mt-2 flex items-center gap-2 rounded-lg bg-arena-gold/10 px-2 py-1">
@@ -255,7 +256,7 @@ export const Navbar = () => {
                     
                     <Link
                       to={user?.role === 'admin' ? '/admin' : '/dashboard'}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <i className="ti ti-layout-dashboard text-base" />
@@ -263,8 +264,8 @@ export const Navbar = () => {
                     </Link>
                     
                     <Link
-                      to="/wallet"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
+                      to="/dashboard?tab=wallet"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <i className="ti ti-wallet text-base" />
@@ -272,8 +273,8 @@ export const Navbar = () => {
                     </Link>
                     
                     <Link
-                      to="/orders"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
+                      to="/dashboard?tab=orders"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <i className="ti ti-package text-base" />
@@ -281,19 +282,19 @@ export const Navbar = () => {
                     </Link>
                     
                     <Link
-                      to="/settings"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
+                      to="/dashboard?tab=profile"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <i className="ti ti-settings text-base" />
                       Settings
                     </Link>
                     
-                    <div className="border-t border-white/10 mt-1 pt-1">
+                    <div className="mt-1 border-t border-white/10 pt-1">
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-400 transition-all hover:bg-white/5 hover:text-red-300"
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 transition-all hover:bg-white/5 hover:text-red-300"
                       >
                         <i className="ti ti-logout text-base" />
                         Logout
@@ -304,7 +305,7 @@ export const Navbar = () => {
                   <>
                     <Link
                       to="/login"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <i className="ti ti-login text-base" />
@@ -312,7 +313,7 @@ export const Navbar = () => {
                     </Link>
                     <Link
                       to="/register"
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <i className="ti ti-user-plus text-base" />
@@ -455,7 +456,7 @@ export const Navbar = () => {
                     Dashboard
                   </Link>
                   <Link
-                    to="/wallet"
+                    to="/dashboard?tab=wallet"
                     className="flex items-center gap-3 rounded-lg px-4 py-3 text-base text-gray-300 transition-all hover:bg-white/5 hover:text-white"
                     onClick={() => setMobileOpen(false)}
                   >

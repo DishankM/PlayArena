@@ -14,7 +14,7 @@ const categories = [
     name: 'Table Tennis',
     sport: 'table-tennis',
     image:
-      'https://images.unsplash.com/photo-1534153866295-c7434be973b1?w=600&q=80&auto=format&fit=crop',
+      'https://png.pngtree.com/template/20210728/ourmid/pngtree-promotion-of-table-tennis-creative-contracted-instagram-post-image_552956.jpg',
     events: 18,
     players: 520,
   },
@@ -22,7 +22,7 @@ const categories = [
     name: 'Tennis',
     sport: 'tennis',
     image:
-      'https://images.unsplash.com/photo-1595435934249-443f908eeeca?w=600&q=80&auto=format&fit=crop',
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQo4TMJjU1r3s1HuKQMMID2vSUCQajDvys2DA&s',
     events: 12,
     players: 310,
   },
@@ -38,7 +38,7 @@ const categories = [
     name: 'Running',
     sport: 'running',
     image:
-      'https://images.unsplash.com/photo-1476480862128-209bfaa8edc8?w=600&q=80&auto=format&fit=crop',
+      'https://static.vecteezy.com/system/resources/thumbnails/006/992/893/small/running-man-silhouette-in-sunset-time-silhouette-for-a-runner-training-in-the-evening-sunsets-photo.jpg',
     events: 9,
     players: 1200,
   },

@@ -1,4 +1,3 @@
-// server/controllers/orderController.js
 import mongoose from 'mongoose'
 import { validationResult } from 'express-validator'
 import Coupon from '../models/Coupon.js'

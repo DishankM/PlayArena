@@ -1,4 +1,3 @@
-// client/src/components/payment/PaymentStatus.jsx
 const PaymentStatus = ({ status, message }) => {
   const map = {
     success: 'text-green-600 bg-green-50 border-green-200',

@@ -1,4 +1,3 @@
-// server/routes/orderRoutes.js
 import express from 'express'
 import { body, param } from 'express-validator'
 import { cancelOrder, getOrderById, getUserOrders, placeOrder, validateCoupon } from '../controllers/orderController.js'

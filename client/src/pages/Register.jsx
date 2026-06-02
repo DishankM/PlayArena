@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/slices/authSlice';
 import { setWallet } from '../store/slices/walletSlice';
 import { authAPI } from '../services/api';
+import logo from '../assets/logo.png';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^(\+91[\-\s]?)?[6-9]\d{9}$/;
@@ -176,13 +177,11 @@ export default function Register() {
           {/* Logo */}
           <div className="mb-8 text-center">
             <Link to="/" className="inline-flex items-center gap-0.5 text-2xl font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-arena-gold to-arena-gold-dark bg-clip-text text-transparent">
-                PLAY
-              </span>
-              <span className="text-white">ARENA</span>
+              <img src={logo} alt="PlayArena Logo" className='h-24 w-72'  />
             </Link>
-            <p className="mt-2 text-sm text-gray-400">Join India's premier sports platform</p>
+              <p className="mt-2 text-sm text-gray-400">Sign in to your account</p>
           </div>
+          
 
           <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-8 backdrop-blur-sm">
             <div className="text-center">
@@ -237,8 +236,8 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`w-full rounded-lg border ${
-                      showError('name') ? 'border-red-500' : 'border-white/20'
-                    } bg-white/5 py-2.5 pl-10 pr-4 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
+                      showError('name') ? 'border-red-500' : 'border-white/30'
+                    } bg-white/10 py-2.5 pl-10 pr-4 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
                     placeholder="Rahul Sharma"
                     autoComplete="name"
                   />
@@ -263,8 +262,8 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`w-full rounded-lg border ${
-                      showError('email') ? 'border-red-500' : 'border-white/20'
-                    } bg-white/5 py-2.5 pl-10 pr-4 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
+                      showError('email') ? 'border-red-500' : 'border-white/30'
+                    } bg-white/10 py-2.5 pl-10 pr-4 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
                     placeholder="you@example.com"
                     autoComplete="email"
                   />
@@ -289,8 +288,8 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`w-full rounded-lg border ${
-                      showError('phone') ? 'border-red-500' : 'border-white/20'
-                    } bg-white/5 py-2.5 pl-10 pr-4 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
+                      showError('phone') ? 'border-red-500' : 'border-white/30'
+                    } bg-white/10 py-2.5 pl-10 pr-4 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
                     placeholder="+91 98765 43210"
                     autoComplete="tel"
                   />
@@ -315,8 +314,8 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`w-full rounded-lg border ${
-                      showError('password') ? 'border-red-500' : 'border-white/20'
-                    } bg-white/5 py-2.5 pl-10 pr-12 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
+                      showError('password') ? 'border-red-500' : 'border-white/30'
+                    } bg-white/10 py-2.5 pl-10 pr-12 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
                     placeholder="Create a strong password"
                     autoComplete="new-password"
                   />
@@ -369,8 +368,8 @@ export default function Register() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`w-full rounded-lg border ${
-                      showError('confirmPassword') ? 'border-red-500' : 'border-white/20'
-                    } bg-white/5 py-2.5 pl-10 pr-12 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
+                      showError('confirmPassword') ? 'border-red-500' : 'border-white/30'
+                    } bg-white/10 py-2.5 pl-10 pr-12 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
                     placeholder="Confirm your password"
                     autoComplete="new-password"
                   />

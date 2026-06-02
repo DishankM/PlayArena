@@ -1,4 +1,3 @@
-// server/controllers/paymentController.js
 import { body, param, validationResult } from 'express-validator'
 import Order from '../models/Order.js'
 import Registration from '../models/Registration.js'
@@ -61,7 +60,7 @@ const markPaidAndFinalize = async ({ order, paymentId, paymentMethod, skipNxlCre
       paymentMethod,
       paidAt: new Date(),
     },
-    { new: true }
+    { returnDocument: 'after' }
   )
   if (!updated) return { alreadyPaid: true, order: await Order.findById(order._id) }
 
@@ -87,27 +86,28 @@ const markRegistrationPaidAndFinalize = async ({ registration, paymentId, paymen
   const updated = await Registration.findOneAndUpdate(
     { _id: registration._id, paymentStatus: { $ne: 'paid' } },
     { paymentStatus: 'paid', paymentId, paymentMethod, paidAt: new Date() },
-    { new: true }
+    { returnDocument: 'after' }
   )
   if (!updated) return { alreadyPaid: true, registration: await Registration.findById(registration._id) }
 
   const tournament = await Tournament.findById(updated.tournament)
   if (!updated.qrToken) {
-    updated.qrToken = await generateQRToken()
+    updated.qrToken = generateQRToken(updated.tournament, updated.user, updated._id)
     await updated.save()
   }
+
+  const qrDataUrl = await generateQRDataURL(updated.qrToken, tournament?.name, '')
 
   await Promise.all([
     Tournament.updateOne({ _id: updated.tournament }, { $inc: { filledSlots: 1 } }),
     tournament?.nxlReward && !skipNxlCredit
       ? creditFixedNXL(updated.user, tournament.nxlReward, `NXL earned - ${tournament.name} registration`, tournament._id)
       : Promise.resolve(),
-    generateQRDataURL(updated.qrToken),
   ])
 
   const user = await User.findById(updated.user).select('email')
   if (user?.email && tournament) sendQRPassEmail(user.email, updated, tournament)
-  return { alreadyPaid: false, registration: updated, qrToken: updated.qrToken }
+  return { alreadyPaid: false, registration: updated, qrToken: updated.qrToken, qrDataUrl }
 }
 
 export const paymentValidations = {
@@ -234,7 +234,12 @@ export const verifyTournamentRazorpayPayment = async (req, res, next) => {
     const result = await markRegistrationPaidAndFinalize({ registration, paymentId: razorpayPaymentId, paymentMethod: 'razorpay' })
     res.status(200).json({
       success: true,
-      data: { registrationId: registration._id, qrToken: result.registration?.qrToken },
+      data: {
+        registrationId: registration._id,
+        registration: result.registration,
+        qrToken: result.registration?.qrToken,
+        qrDataUrl: result.qrDataUrl,
+      },
       message: result.alreadyPaid ? 'Payment already recorded' : 'Tournament payment verified successfully',
     })
   } catch (error) {
@@ -378,7 +383,12 @@ export const verifyTournamentStripePayment = async (req, res, next) => {
     const result = await markRegistrationPaidAndFinalize({ registration, paymentId: paymentIntentId, paymentMethod: 'stripe' })
     res.status(200).json({
       success: true,
-      data: { registrationId: registration._id, qrToken: result.registration?.qrToken },
+      data: {
+        registrationId: registration._id,
+        registration: result.registration,
+        qrToken: result.registration?.qrToken,
+        qrDataUrl: result.qrDataUrl,
+      },
       message: result.alreadyPaid ? 'Payment already recorded' : 'Tournament payment verified successfully',
     })
   } catch (error) {

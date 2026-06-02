@@ -1,4 +1,3 @@
-// server/controllers/adminController.js
 import { validationResult } from 'express-validator'
 import Coupon from '../models/Coupon.js'
 import Order from '../models/Order.js'
@@ -341,7 +340,7 @@ export const updateOrderStatus = async (req, res, next) => {
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       { orderStatus: req.body.status },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     )
       .populate('user', 'name email phone')
       .populate('items.product', 'name category')
@@ -411,7 +410,7 @@ export const updateCoupon = async (req, res, next) => {
     }))(req.body)
     Object.keys(allowed).forEach((key) => allowed[key] === undefined && delete allowed[key])
     const coupon = await Coupon.findByIdAndUpdate(req.params.id, allowed, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean()
     if (!coupon) throw createError(404, 'Coupon not found')
@@ -423,7 +422,7 @@ export const updateCoupon = async (req, res, next) => {
 
 export const deactivateCoupon = async (req, res, next) => {
   try {
-    const coupon = await Coupon.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true }).lean()
+    const coupon = await Coupon.findByIdAndUpdate(req.params.id, { isActive: false }, { returnDocument: 'after' }).lean()
     if (!coupon) throw createError(404, 'Coupon not found')
     res.status(200).json({ success: true, data: {}, message: 'Coupon deactivated' })
   } catch (error) {

@@ -8,6 +8,9 @@ import { Footer } from '../components/common/Footer';
 import { paymentAPI, tournamentAPI } from '../services/api';
 import { formatPrice } from '../utils/helpers';
 import { TournamentStripeForm } from '../components/payment/TournamentStripeForm';
+import { TournamentRazorpayButton } from '../components/payment/TournamentRazorpayButton';
+import { QRPassCard } from '../components/events/QRPassCard';
+import useToast from '../hooks/useToast';
 
 export default function EventRegister() {
   const { id } = useParams();
@@ -15,6 +18,7 @@ export default function EventRegister() {
   const user = useSelector((state) => state.auth.user);
   const [tournament, setTournament] = useState(null);
   const [loadingTournament, setLoadingTournament] = useState(true);
+  const [loadingRegistration, setLoadingRegistration] = useState(true);
 
   const [playerData, setPlayerData] = useState({
     name: user?.name || '',
@@ -34,11 +38,38 @@ export default function EventRegister() {
   const [step, setStep] = useState('form');
   const [processing, setProcessing] = useState(false);
   const [qrToken, setQrToken] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState('');
   const [errors, setErrors] = useState({});
+  const [infoMessage, setInfoMessage] = useState('');
+  const toast = useToast();
   const [useNXL, setUseNXL] = useState(false);
   const [pendingRegistrationId, setPendingRegistrationId] = useState('');
   const [stripeClientSecret, setStripeClientSecret] = useState('');
   const [stripeAmount, setStripeAmount] = useState(0);
+  const [registration, setRegistration] = useState(null);
+
+  const applyRegistrationState = (registrationData) => {
+    const existing = registrationData?.registration;
+    if (!existing) return;
+
+    setRegistration(existing);
+    setPendingRegistrationId(existing._id);
+    setQrToken(registrationData.qrToken || existing.qrToken || '');
+    setQrDataUrl(registrationData.qrDataUrl || '');
+    setStripeAmount(registrationData.amountDue || tournament?.entryFee || 0);
+
+    if (['razorpay', 'stripe'].includes(existing.paymentMethod)) {
+      setPaymentMethod(existing.paymentMethod);
+    }
+
+    if (existing.paymentStatus === 'paid') {
+      setInfoMessage('You are already registered for this event. Your QR pass is ready.');
+      setStep('success');
+    } else {
+      setInfoMessage('You already started this registration. Complete payment to confirm your spot.');
+      setStep('form');
+    }
+  };
 
   const loadRazorpayScript = () =>
     new Promise((resolve) => {
@@ -51,17 +82,50 @@ export default function EventRegister() {
     });
 
   useEffect(() => {
+    let active = true;
+
     if (!user) {
       navigate('/login', { state: { from: `/events/${id}/register` } });
+      return () => {
+        active = false;
+      };
     }
-    tournamentAPI
-      .get(`/${id}`)
-      .then((res) => setTournament(res.data.data.tournament))
-      .catch(() => setTournament(null))
-      .finally(() => setLoadingTournament(false));
+
+    const loadRegistrationPage = async () => {
+      setLoadingTournament(true);
+      setLoadingRegistration(true);
+
+      try {
+        const tournamentRes = await tournamentAPI.get(`/${id}`);
+        if (!active) return;
+        setTournament(tournamentRes.data.data.tournament);
+
+        try {
+          const registrationRes = await tournamentAPI.get(`/${id}/my-registration`);
+          if (!active) return;
+          applyRegistrationState(registrationRes.data.data);
+        } catch {
+          if (!active) return;
+          setInfoMessage('');
+        }
+      } catch {
+        if (active) setTournament(null);
+      } finally {
+        if (active) {
+          setLoadingTournament(false);
+          setLoadingRegistration(false);
+        }
+      }
+    };
+
+    loadRegistrationPage();
+
+    return () => {
+      active = false;
+    };
   }, [user, navigate, id]);
 
-  if (loadingTournament) {
+  if (loadingTournament || loadingRegistration) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-arena-navy to-arena-navy-deep">
         <Navbar />
@@ -79,8 +143,8 @@ export default function EventRegister() {
         <Navbar />
         <main className="mx-auto max-w-lg px-6 py-24 text-center">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
-            <i className="ti ti-calendar-off text-5xl text-gray-500" />
-            <h1 className="mt-4 text-2xl font-bold text-white">Event not found</h1>
+            <i className="ti ti-calendar-off text-5xl text-gray-700" />
+            <h1 className="mt-4 text-2xl font-bold text-gray-700">Event not found</h1>
             <Link to="/events" className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-arena-primary to-arena-primary-dark px-6 py-2.5 font-semibold text-white transition-all hover:shadow-lg">
               <i className="ti ti-arrow-left" />
               Back to events
@@ -98,6 +162,9 @@ export default function EventRegister() {
   const userNXLBallance = user?.nxlCredits || 0;
   const canUseNXL = userNXLBallance >= tournament.entryFee && tournament.entryFee > 0;
   const finalPrice = useNXL && canUseNXL ? 0 : tournament.entryFee;
+  const showRazorpayPayment = paymentMethod === 'razorpay' && pendingRegistrationId && registration?.paymentStatus === 'pending' && finalPrice > 0;
+  const showStripePayment = Boolean(stripeClientSecret && paymentMethod === 'stripe' && pendingRegistrationId && finalPrice > 0);
+  const showPaymentSetupButton = !showRazorpayPayment && !showStripePayment;
 
   const handlePlayerChange = (e) => {
     setPlayerData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -148,9 +215,17 @@ export default function EventRegister() {
   };
 
   const handleConfirmPay = async () => {
-    if (!validate()) return;
+    if (registration?.paymentStatus === 'paid') {
+      setStep('success');
+      return;
+    }
+
+    const hasPendingRegistration = registration?.paymentStatus === 'pending';
+    if (!hasPendingRegistration && !validate()) return;
+    setInfoMessage('');
+    setErrors({});
     setProcessing(true);
-    setStep('processing');
+    setStep('form');
 
     try {
       const res = await tournamentAPI.post(`/${tournament._id}/register`, {
@@ -160,48 +235,23 @@ export default function EventRegister() {
         paymentMethod: useNXL && canUseNXL ? 'nxl' : paymentMethod,
       });
       const registration = res.data.data.registration;
+      setRegistration(registration);
       setPendingRegistrationId(registration._id);
+      setStripeAmount(res.data.data.amountDue || tournament.entryFee || 0);
+      if (res.data.message) {
+        setInfoMessage(res.data.message);
+      }
       if (!res.data.data.requiresPayment) {
         setQrToken(res.data.data.qrToken);
+        setQrDataUrl(res.data.data.qrDataUrl || '');
+        toast.success('Registration completed successfully. Your QR pass is ready.');
         setStep('success');
         return;
       }
 
       if (paymentMethod === 'razorpay') {
-        const loaded = await loadRazorpayScript();
-        if (!loaded) throw new Error('Failed to load Razorpay SDK');
-        const { data: createRes } = await paymentAPI.post('/tournament/razorpay/create-order', { registrationId: registration._id });
-        const options = {
-          key: createRes.data.keyId,
-          amount: createRes.data.amount,
-          currency: createRes.data.currency,
-          name: 'PlayArena',
-          description: `${tournament.name} registration`,
-          order_id: createRes.data.razorpayOrderId,
-          prefill: { name: playerData.name, email: playerData.email, contact: playerData.phone },
-          handler: async (response) => {
-            const { data: verifyRes } = await paymentAPI.post('/tournament/razorpay/verify', {
-              registrationId: registration._id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-            });
-            setQrToken(verifyRes.data.qrToken);
-            setStep('success');
-          },
-          modal: {
-            ondismiss: () => {
-              setStep('form');
-              setErrors({ submit: 'Payment cancelled. You can retry from registration page.' });
-            },
-          },
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', (response) => {
-          setStep('form');
-          setErrors({ submit: response.error?.description || 'Payment failed' });
-        });
-        rzp.open();
+        setInfoMessage('Registration saved. Use the Razorpay card below to complete payment.');
+        setStep('form');
         return;
       }
 
@@ -218,7 +268,20 @@ export default function EventRegister() {
       setStep('form');
       setErrors({ submit: 'Please choose a valid payment method.' });
     } catch (error) {
-      setErrors({ submit: error.message || 'Registration failed. Please try again.' });
+      if (error.response?.status === 409) {
+        try {
+          const registrationRes = await tournamentAPI.get(`/${tournament._id}/my-registration`);
+          applyRegistrationState(registrationRes.data.data);
+          toast.success('You are already registered for this event.');
+          return;
+        } catch {
+          // Fall through to the visible error below.
+        }
+      }
+
+      const message = error.message || 'Registration failed. Please try again.'
+      setErrors({ submit: message });
+      toast.error(message)
       setStep('form');
     } finally {
       setProcessing(false);
@@ -226,6 +289,15 @@ export default function EventRegister() {
   };
 
   const handleDownloadQR = () => {
+    const link = document.createElement('a');
+    link.download = `qr-${tournament.name.toLowerCase().replace(/\s+/g, '-')}.png`;
+
+    if (qrDataUrl) {
+      link.href = qrDataUrl;
+      link.click();
+      return;
+    }
+
     // Create a canvas element to generate QR code image
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -244,8 +316,6 @@ export default function EventRegister() {
     ctx.fillStyle = '#F7C948';
     ctx.fillText(qrToken, 80, 250);
     
-    const link = document.createElement('a');
-    link.download = `qr-${tournament.name.toLowerCase().replace(/\s+/g, '-')}.png`;
     link.href = canvas.toDataURL();
     link.click();
   };
@@ -254,42 +324,46 @@ export default function EventRegister() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-arena-navy to-arena-navy-deep">
         <Navbar />
-        <main className="mx-auto max-w-lg px-6 py-16">
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-8 text-center backdrop-blur-sm">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
-              <i className="ti ti-check text-4xl text-green-400" />
-            </div>
-            <h1 className="mt-6 text-2xl font-bold text-white">Registration Confirmed! 🎉</h1>
-            <p className="mt-2 text-gray-300">
-              Your QR pass has been sent to <strong>{playerData.email}</strong>
-            </p>
-            
-            <div className="mx-auto mt-8 flex h-56 w-56 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
-              <div className="text-center">
-                <i className="ti ti-qrcode text-8xl text-arena-primary" />
-                <p className="mt-2 text-xs text-gray-400">QR Code will appear here</p>
+        <main className="mx-auto max-w-7xl px-6 py-16">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-8 backdrop-blur-sm">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
+                <i className="ti ti-check text-4xl text-green-400" />
               </div>
-            </div>
-            
-            <p className="mt-4 font-mono text-xs text-arena-gold break-all">{qrToken}</p>
-            
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
-                onClick={handleDownloadQR}
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-arena-primary to-arena-primary-dark px-6 py-2.5 font-semibold text-white transition-all hover:shadow-lg"
-              >
-                <i className="ti ti-download" />
-                Download QR Pass
-              </button>
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-2.5 font-semibold text-white transition-all hover:border-arena-primary hover:bg-arena-primary/20"
-              >
-                <i className="ti ti-layout-dashboard" />
-                View My Registrations
-              </Link>
-            </div>
+              <h1 className="mt-6 text-3xl font-bold text-white">Registration Confirmed</h1>
+              <p className="mt-3 text-gray-300">
+                Your ticket is ready. Show this QR pass at the venue entrance.
+              </p>
+              <p className="mt-4 text-gray-400">
+                Registered for <strong>{tournament.name}</strong> as <strong>{registration?.playerName || playerData.name}</strong>.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleDownloadQR}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-arena-primary to-arena-primary-dark px-6 py-2.5 font-semibold text-white transition-all hover:shadow-lg"
+                >
+                  <i className="ti ti-download" />
+                  Download QR Pass
+                </button>
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-2.5 font-semibold text-white transition-all hover:border-arena-primary hover:bg-arena-primary/20"
+                >
+                  <i className="ti ti-layout-dashboard" />
+                  View My Registrations
+                </Link>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-sm">
+              <QRPassCard
+                registration={registration}
+                tournament={tournament}
+                qrDataUrl={qrDataUrl}
+                qrToken={qrToken}
+              />
+            </section>
           </div>
         </main>
         <Footer />
@@ -345,6 +419,20 @@ export default function EventRegister() {
         
         <h1 className="text-3xl font-bold text-white">Register for {tournament.name}</h1>
 
+        {registration?.paymentStatus === 'pending' && (
+          <div className="mt-6 rounded-xl border border-arena-gold/30 bg-arena-gold/10 p-4 text-sm text-arena-gold">
+            <div className="flex items-start gap-3">
+              <i className="ti ti-alert-circle mt-0.5 text-lg" />
+              <div>
+                <p className="font-semibold">Registration already started</p>
+                <p className="mt-1 text-gray-300">
+                  Complete the payment below to confirm your spot. We will use your existing registration instead of creating a duplicate.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {step === 'processing' ? (
           <div className="mt-12 rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 py-20 text-center backdrop-blur-sm">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-arena-primary border-t-transparent" />
@@ -367,7 +455,7 @@ export default function EventRegister() {
                           name="name"
                           value={playerData.name}
                           onChange={handlePlayerChange}
-                          className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none"
+                          className="w-full rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none"
                         />
                       </div>
                       <div className="sm:col-span-2">
@@ -376,7 +464,7 @@ export default function EventRegister() {
                           name="email"
                           value={playerData.email}
                           readOnly
-                          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-gray-400 cursor-not-allowed"
+                          className="w-full rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-white cursor-not-allowed"
                         />
                       </div>
                       <div>
@@ -386,8 +474,8 @@ export default function EventRegister() {
                           value={playerData.phone}
                           onChange={handlePlayerChange}
                           className={`w-full rounded-lg border ${
-                            errors.phone ? 'border-red-500' : 'border-white/20'
-                          } bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none`}
+                            errors.phone ? 'border-red-500' : 'border-white/30'
+                          } bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none`}
                         />
                         {errors.phone && <p className="mt-1 text-sm text-red-400">{errors.phone}</p>}
                       </div>
@@ -399,8 +487,8 @@ export default function EventRegister() {
                           value={playerData.age}
                           onChange={handlePlayerChange}
                           className={`w-full rounded-lg border ${
-                            errors.age ? 'border-red-500' : 'border-white/20'
-                          } bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none`}
+                            errors.age ? 'border-red-500' : 'border-white/30'
+                          } bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none`}
                         />
                         {errors.age && <p className="mt-1 text-sm text-red-400">{errors.age}</p>}
                       </div>
@@ -410,7 +498,7 @@ export default function EventRegister() {
                           name="city"
                           value={playerData.city}
                           onChange={handlePlayerChange}
-                          className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white focus:border-arena-primary focus:outline-none"
+                          className="w-full rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-white focus:border-arena-primary focus:outline-none"
                         >
                           <option value="Nashik">Nashik</option>
                           <option value="Pune">Pune</option>
@@ -431,7 +519,7 @@ export default function EventRegister() {
                           name="emergencyName"
                           value={playerData.emergencyName}
                           onChange={handlePlayerChange}
-                          className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none"
+                          className="w-full rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none"
                         />
                       </div>
                       <div>
@@ -440,7 +528,7 @@ export default function EventRegister() {
                           name="emergencyPhone"
                           value={playerData.emergencyPhone}
                           onChange={handlePlayerChange}
-                          className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none"
+                          className="w-full rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none"
                         />
                       </div>
                     </div>
@@ -461,8 +549,8 @@ export default function EventRegister() {
                           setTeamData((prev) => ({ ...prev, teamName: e.target.value }))
                         }
                         className={`w-full rounded-lg border ${
-                          errors.teamName ? 'border-red-500' : 'border-white/20'
-                        } bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none`}
+                          errors.teamName ? 'border-red-500' : 'border-white/30'
+                        } bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none`}
                         placeholder="Enter your team name"
                       />
                       {errors.teamName && <p className="mt-1 text-sm text-red-400">{errors.teamName}</p>}
@@ -485,7 +573,7 @@ export default function EventRegister() {
                           onChange={(e) =>
                             handleMemberChange(index, 'name', e.target.value)
                           }
-                          className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none"
+                          className="flex-1 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none"
                         />
                         <input
                           placeholder="Phone number"
@@ -493,7 +581,7 @@ export default function EventRegister() {
                           onChange={(e) =>
                             handleMemberChange(index, 'phone', e.target.value)
                           }
-                          className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none"
+                          className="flex-1 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none"
                         />
                         {index > 0 && (
                           <button
@@ -582,15 +670,25 @@ export default function EventRegister() {
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('razorpay')}
-                          className={`rounded-md px-3 py-1 text-xs ${paymentMethod === 'razorpay' ? 'bg-arena-primary text-white' : 'bg-white/10 text-gray-300'}`}
+                          className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition ${
+                            paymentMethod === 'razorpay'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                          }`}
                         >
+                          <i className="ti ti-wallet" />
                           Razorpay
                         </button>
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('stripe')}
-                          className={`rounded-md px-3 py-1 text-xs ${paymentMethod === 'stripe' ? 'bg-arena-primary text-white' : 'bg-white/10 text-gray-300'}`}
+                          className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition ${
+                            paymentMethod === 'stripe'
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                          }`}
                         >
+                          <i className="ti ti-credit-card" />
                           Stripe
                         </button>
                       </div>
@@ -646,33 +744,89 @@ export default function EventRegister() {
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleConfirmPay}
-                  className="mt-6 w-full rounded-lg bg-gradient-to-r from-arena-primary to-arena-primary-dark py-3 font-semibold text-white transition-all hover:shadow-lg hover:shadow-arena-primary/30 active:scale-95"
-                >
-                  {finalPrice === 0 ? 'Confirm Registration' : `Pay ₹${finalPrice.toLocaleString()}`}
-                </button>
+                {infoMessage && (
+                  <div className="mt-4 rounded-lg border border-arena-border bg-arena-surface p-3 text-sm text-arena-navy">
+                    <strong className="font-semibold">Info:</strong> {infoMessage}
+                  </div>
+                )}
+
+                {errors.submit && (
+                  <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+                    {errors.submit}
+                  </div>
+                )}
+
+                {showPaymentSetupButton && (
+                  <button
+                    type="button"
+                    onClick={handleConfirmPay}
+                    disabled={processing}
+                    className="mt-6 w-full rounded-lg bg-gradient-to-r from-arena-primary to-arena-primary-dark py-3 font-semibold text-white transition-all hover:shadow-lg hover:shadow-arena-primary/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {processing ? (
+                      <span className="inline-flex items-center justify-center gap-2">
+                        <i className="ti ti-loader-2 animate-spin" />
+                        Preparing payment...
+                      </span>
+                    ) : registration?.paymentStatus === 'pending' ? (
+                      finalPrice === 0
+                        ? 'Complete Registration'
+                        : `Continue Payment ₹${finalPrice.toLocaleString()}`
+                    ) : finalPrice === 0 ? (
+                      'Confirm Registration'
+                    ) : (
+                      `Continue to Pay ₹${finalPrice.toLocaleString()}`
+                    )}
+                  </button>
+                )}
 
                 <p className="mt-4 text-center text-xs text-gray-500">
                   <i className="ti ti-shield-check mr-1" />
                   Secure payment • Instant confirmation
                 </p>
 
-                {stripeClientSecret && paymentMethod === 'stripe' && pendingRegistrationId && (
+                {showStripePayment && (
                   <div className="mt-4">
                     <TournamentStripeForm
                       registrationId={pendingRegistrationId}
                       clientSecret={stripeClientSecret}
                       amount={stripeAmount}
-                      onSuccess={(token) => {
+                      onSuccess={(token, dataUrl, paidRegistration) => {
                         setQrToken(token);
+                        setQrDataUrl(dataUrl || '');
+                        setRegistration(paidRegistration || ((prev) => (prev ? { ...prev, paymentStatus: 'paid' } : prev)));
                         setStripeClientSecret('');
                         setPendingRegistrationId('');
                         setStep('success');
                       }}
                       onError={(message) => {
                         setErrors({ submit: message || 'Stripe payment failed' });
+                      }}
+                    />
+                  </div>
+                )}
+
+                {showRazorpayPayment && (
+                  <div className="mt-4">
+                    <TournamentRazorpayButton
+                      registrationId={pendingRegistrationId}
+                      amount={stripeAmount}
+                      userDetails={{
+                        name: playerData.name,
+                        email: playerData.email,
+                        phone: playerData.phone,
+                      }}
+                      onSuccess={(token, dataUrl, paidRegistration) => {
+                        setQrToken(token);
+                        setQrDataUrl(dataUrl || '');
+                        setRegistration(paidRegistration || ((prev) => (prev ? { ...prev, paymentStatus: 'paid' } : prev)));
+                        setPendingRegistrationId('');
+                        setStep('success');
+                      }}
+                      onError={(message) => {
+                        setErrors({ submit: message || 'Razorpay payment failed' });
+                        setStep('form');
+                        setProcessing(false);
                       }}
                     />
                   </div>

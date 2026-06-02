@@ -1,5 +1,3 @@
-// client/src/components/home/NxlBenefits.jsx
-
 const benefits = [
   {
     title: 'Shop & earn',
@@ -8,7 +6,7 @@ const benefits = [
   },
   {
     title: 'Register & earn',
-    desc: 'Tournament sign-ups award 50–250 NXL depending on the event tier.',
+    desc: 'Tournament sign-ups award 50-250 NXL depending on the event tier.',
     icon: 'ti-trophy',
   },
   {

@@ -64,15 +64,16 @@ export default function AdminOrders() {
     const header = 'OrderID,Customer,Email,Items,Total,PaymentMethod,Status,Date'
     const rows = orders.map((o) => {
       const items = o.items?.map((i) => i.name || i.product?.name).join('; ') || ''
+      const escapeCsv = (str) => `"${(str || '').toString().replace(/"/g, '""')}"`
       return [
-        o._id,
-        o.user?.name,
-        o.user?.email,
-        items,
+        escapeCsv(o._id),
+        escapeCsv(o.user?.name),
+        escapeCsv(o.user?.email),
+        escapeCsv(items),
         o.total,
-        o.paymentMethod,
-        o.orderStatus,
-        new Date(o.createdAt).toISOString(),
+        escapeCsv(o.paymentMethod),
+        escapeCsv(o.orderStatus),
+        escapeCsv(new Date(o.createdAt).toISOString()),
       ].join(',')
     })
     const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' })

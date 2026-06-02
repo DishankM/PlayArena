@@ -1,4 +1,3 @@
-// server/utils/paymentHelpers.js
 import crypto from 'crypto'
 
 export const generateReceipt = (userId) => `rcpt_${String(userId).slice(-6)}_${Date.now()}`

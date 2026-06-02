@@ -1,4 +1,3 @@
-// server/services/invoiceService.js
 import PDFDocument from 'pdfkit'
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'

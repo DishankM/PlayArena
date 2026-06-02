@@ -21,12 +21,19 @@ const registrationSchema = new mongoose.Schema(
     qrToken: { type: String },
     attended: { type: Boolean, default: false },
     attendedAt: Date,
+    checkedInBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 )
 
 registrationSchema.index({ user: 1, tournament: 1 }, { unique: true })
-registrationSchema.index({ qrToken: 1 }, { unique: true, sparse: true })
+registrationSchema.index(
+  { qrToken: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { qrToken: { $type: 'string' } },
+  }
+)
 registrationSchema.index({ tournament: 1 })
 registrationSchema.index({ paymentStatus: 1 })
 registrationSchema.index({ razorpayOrderId: 1 }, { sparse: true })

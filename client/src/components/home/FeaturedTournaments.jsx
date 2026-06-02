@@ -26,7 +26,7 @@ export const FeaturedTournaments = () => {
         if (mounted) setUpcoming(list.length ? list.slice(0, 4) : mockTournaments.slice(0, 4));
       })
       .catch((err) => {
-        // If API fails (dev server not running), fallback to local mock data
+        
         console.warn('Failed to load upcoming tournaments, using mock data', err?.message || err)
         if (mounted) setUpcoming(mockTournaments.slice(0, 4))
       })

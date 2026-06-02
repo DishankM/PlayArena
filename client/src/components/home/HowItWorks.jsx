@@ -1,5 +1,3 @@
-// client/src/components/home/HowItWorks.jsx
-
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
@@ -169,23 +167,6 @@ export const HowItWorks = () => {
                 )}
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Video/Image Section */}
-        <div className="mt-20 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-arena-primary/5 to-transparent p-8 backdrop-blur-sm">
-          <div className="flex flex-col items-center justify-between gap-6 lg:flex-row">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-arena-primary/20">
-                <i className="ti ti-video text-arena-primary text-3xl" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-arena-gold">Watch Demo</p>
-                <p className="text-lg font-bold text-white">See how PlayArena works in 2 minutes</p>
-                <p className="text-sm text-gray-400">Learn about registration, payments, and check-in</p>
-              </div>
-            </div>
-            
           </div>
         </div>
 

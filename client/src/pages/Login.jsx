@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/slices/authSlice';
 import { setWallet } from '../store/slices/walletSlice';
 import { authAPI } from '../services/api';
+import logo from '../assets/logo.png';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -20,7 +21,7 @@ export default function Login() {
   const [touched, setTouched] = useState({});
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Load saved email if "Remember Me" was checked
+  
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
     if (savedEmail) {
@@ -92,8 +93,17 @@ export default function Login() {
     try {
       const res = await authAPI.post('/login', formData);
       const { user, accessToken } = res.data.data;
-      dispatch(setCredentials({ user, token: accessToken }));
       localStorage.setItem('accessToken', accessToken);
+      let nextUser = user;
+
+      try {
+        const meRes = await authAPI.get('/me');
+        nextUser = meRes.data.data.user;
+      } catch {
+        nextUser = user;
+      }
+
+      dispatch(setCredentials({ user: nextUser, token: accessToken }));
       dispatch(setWallet({ balance: user.walletBalance || 0, nxlCredits: user.nxlCredits || 0 }));
       
       // Redirect based on user role
@@ -114,10 +124,7 @@ export default function Login() {
           {/* Logo */}
           <div className="mb-8 text-center">
             <Link to="/" className="inline-flex items-center gap-0.5 text-2xl font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-arena-gold to-arena-gold-dark bg-clip-text text-transparent">
-                PLAY
-              </span>
-              <span className="text-white">ARENA</span>
+              <img src={logo} alt="PlayArena Logo" className='h-24 w-72'  />
             </Link>
             <p className="mt-2 text-sm text-gray-400">Sign in to your account</p>
           </div>
@@ -136,15 +143,12 @@ export default function Login() {
             </div>
 
             {/* Social Login Options */}
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="mt-6 justify-center gap-4 sm:flex">
               <button className="flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-all hover:border-arena-primary hover:bg-arena-primary/10">
                 <i className="ti ti-brand-google" />
                 Google
               </button>
-              <button className="flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-all hover:border-arena-primary hover:bg-arena-primary/10">
-                <i className="ti ti-brand-apple" />
-                Apple
-              </button>
+              
             </div>
 
             <div className="relative my-6">
@@ -180,8 +184,8 @@ export default function Login() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`w-full rounded-lg border ${
-                      touched.email && fieldErrors.email ? 'border-red-500' : 'border-white/20'
-                    } bg-white/5 py-2.5 pl-10 pr-4 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
+                      touched.email && fieldErrors.email ? 'border-red-500' : 'border-white/30'
+                    } bg-white/10 py-2.5 pl-10 pr-4 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
                     placeholder="rahul.sharma@example.com"
                     autoComplete="email"
                   />
@@ -206,8 +210,8 @@ export default function Login() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`w-full rounded-lg border ${
-                      touched.password && fieldErrors.password ? 'border-red-500' : 'border-white/20'
-                    } bg-white/5 py-2.5 pl-10 pr-12 text-white placeholder-gray-400 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
+                      touched.password && fieldErrors.password ? 'border-red-500' : 'border-white/30'
+                    } bg-white/10 py-2.5 pl-10 pr-12 text-white placeholder-gray-300 focus:border-arena-primary focus:outline-none focus:ring-1 focus:ring-arena-primary`}
                     placeholder="Enter your password"
                     autoComplete="current-password"
                   />
@@ -259,12 +263,7 @@ export default function Login() {
                 )}
               </button>
 
-              {/* Demo Credentials Info */}
-              <div className="mt-4 rounded-lg bg-white/5 p-3 text-center">
-                <p className="text-xs text-gray-400">
-                  Demo credentials: <span className="text-arena-gold">demo@playarena.in</span> / <span className="text-arena-gold">password</span>
-                </p>
-              </div>
+              
             </form>
 
             {/* Sign Up Link */}

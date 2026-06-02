@@ -1,4 +1,3 @@
-// server/routes/tournamentRoutes.js
 import express from 'express'
 import { body, param } from 'express-validator'
 import {
@@ -6,6 +5,7 @@ import {
   deleteTournament,
   getAllTournaments,
   getMyRegistrations,
+  getMyTournamentRegistration,
   getTournamentById,
   getTournamentRegistrations,
   getUpcomingTournaments,
@@ -14,6 +14,7 @@ import {
   updateTournamentStatus,
 } from '../controllers/tournamentController.js'
 import { isAdmin, protect } from '../middleware/authMiddleware.js'
+import { uploadTournamentPoster } from '../middleware/uploadMiddleware.js'
 
 const router = express.Router()
 const admin = [protect, isAdmin]
@@ -25,8 +26,9 @@ const futureDate = (value) => {
 router.get('/', getAllTournaments)
 router.get('/upcoming', getUpcomingTournaments)
 router.get('/my-registrations', protect, getMyRegistrations)
+router.get('/:id/my-registration', protect, [param('id').isMongoId()], getMyTournamentRegistration)
 router.get('/:id', [param('id').isMongoId()], getTournamentById)
-router.post('/', admin, [
+router.post('/', admin, uploadTournamentPoster, [
   body('name').trim().notEmpty().isLength({ min: 3, max: 100 }),
   body('sport').notEmpty(),
   body('type').isIn(['indoor', 'outdoor']),
@@ -35,7 +37,7 @@ router.post('/', admin, [
   body('maxSlots').isInt({ min: 2, max: 1000 }),
   body('startDate').isISO8601().custom(futureDate),
 ], createTournament)
-router.patch('/:id', admin, [param('id').isMongoId()], updateTournament)
+router.patch('/:id', admin, uploadTournamentPoster, [param('id').isMongoId()], updateTournament)
 router.delete('/:id', admin, [param('id').isMongoId()], deleteTournament)
 router.post('/:id/register', protect, [param('id').isMongoId()], registerForTournament)
 router.get('/:id/registrations', admin, [param('id').isMongoId()], getTournamentRegistrations)

@@ -1,4 +1,3 @@
-// server/controllers/productController.js
 import { validationResult } from 'express-validator'
 import Product from '../models/Product.js'
 import Review from '../models/Review.js'
@@ -24,6 +23,17 @@ const uniqueSlug = async (name, ignoreId) => {
 }
 
 const cloudinaryUrls = (files = []) => files.map((file) => file.path || file.secure_url).filter(Boolean)
+
+const parseExistingImages = (value) => {
+  if (value === undefined) return undefined
+  if (Array.isArray(value)) return value.filter(Boolean)
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : []
+  } catch {
+    return []
+  }
+}
 
 const refreshRatings = async (productId) => {
   const reviews = await Review.find({ product: productId }).select('rating').lean()
@@ -109,11 +119,15 @@ export const updateProduct = async (req, res, next) => {
     const product = await Product.findById(req.params.id)
     if (!product) throw createError(404, 'Product not found')
 
+    const existingImages = parseExistingImages(req.body.existingImages)
     const updates = { ...req.body }
+    delete updates.existingImages
     if (updates.name) updates.slug = await uniqueSlug(updates.name, product._id)
-    if (req.files?.length) updates.images = [...(product.images || []), ...cloudinaryUrls(req.files)]
+    if (existingImages !== undefined || req.files?.length) {
+      updates.images = [...(existingImages ?? product.images ?? []), ...cloudinaryUrls(req.files)]
+    }
 
-    const updated = await Product.findByIdAndUpdate(product._id, updates, { new: true, runValidators: true }).lean()
+    const updated = await Product.findByIdAndUpdate(product._id, updates, { returnDocument: 'after', runValidators: true }).lean()
     res.status(200).json({ success: true, data: { product: updated } })
   } catch (error) {
     next(error)
@@ -122,7 +136,7 @@ export const updateProduct = async (req, res, next) => {
 
 export const deleteProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true }).lean()
+    const product = await Product.findByIdAndUpdate(req.params.id, { isActive: false }, { returnDocument: 'after' }).lean()
     if (!product) throw createError(404, 'Product not found')
     res.status(200).json({ success: true, data: {}, message: 'Product removed' })
   } catch (error) {

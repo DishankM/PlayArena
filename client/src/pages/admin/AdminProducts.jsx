@@ -30,6 +30,7 @@ export default function AdminProducts() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editProduct, setEditProduct] = useState(null)
   const [form, setForm] = useState(emptyForm)
+  const [existingImages, setExistingImages] = useState([])
   const [images, setImages] = useState([])
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -63,6 +64,7 @@ export default function AdminProducts() {
   const openAdd = () => {
     setEditProduct(null)
     setForm(emptyForm)
+    setExistingImages([])
     setImages([])
     setModalOpen(true)
   }
@@ -82,8 +84,23 @@ export default function AdminProducts() {
       isFeatured: product.isFeatured,
       isActive: product.isActive !== false,
     })
+    setExistingImages(product.images || [])
     setImages([])
     setModalOpen(true)
+  }
+
+  const addImageFiles = (fileList) => {
+    const nextFiles = Array.from(fileList || [])
+    if (!nextFiles.length) return
+    setImages((prev) => [...prev, ...nextFiles])
+  }
+
+  const removeExistingImage = (imageUrl) => {
+    setExistingImages((prev) => prev.filter((url) => url !== imageUrl))
+  }
+
+  const removeSelectedImage = (index) => {
+    setImages((prev) => prev.filter((_, fileIndex) => fileIndex !== index))
   }
 
   const handleSave = async (e) => {
@@ -97,6 +114,7 @@ export default function AdminProducts() {
     try {
       const fd = new FormData()
       Object.entries(form).forEach(([k, v]) => fd.append(k, String(v)))
+      if (editProduct) fd.append('existingImages', JSON.stringify(existingImages))
       images.forEach((file) => fd.append('images', file))
 
       const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -226,8 +244,8 @@ export default function AdminProducts() {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center gap-2">
-                    <button className="rounded-xl border border-white/20 bg-white/5 px-3 py-1 text-sm text-gray-300">Edit</button>
-                    <button className="rounded-xl border border-white/20 bg-white/5 px-3 py-1 text-sm text-red-400">Delete</button>
+                    <button className="rounded-xl border border-white/20 bg-white/5 px-3 py-1 text-sm text-gray-300" onClick={() => openEdit(p)}>Edit</button>
+                    <button className="rounded-xl border border-white/20 bg-white/5 px-3 py-1 text-sm text-red-400" onClick={() => handleDelete(p)}>Delete</button>
                   </div>
                 </div>
               ))
@@ -339,10 +357,10 @@ export default function AdminProducts() {
               <input className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-gray-300 placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="Slug" required value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
               
               <div className="grid gap-3 sm:grid-cols-2">
-                <select className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-gray-300 focus:border-sky-500 focus:outline-none" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                <select className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2.5 text-gray-300 focus:border-sky-500 focus:outline-none" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                   {CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
                 </select>
-                <select className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-gray-300 focus:border-sky-500 focus:outline-none" value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })}>
+                <select className="rounded-xl border border-white/20 bg-slate-800 px-4 py-2.5 text-gray-300 focus:border-sky-500 focus:outline-none" value={form.sport} onChange={(e) => setForm({ ...form, sport: e.target.value })}>
                   {SPORTS.map((s) => (<option key={s} value={s}>{s}</option>))}
                 </select>
               </div>
@@ -368,12 +386,73 @@ export default function AdminProducts() {
               
               <textarea className="min-h-[100px] w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-gray-300 placeholder-gray-400 focus:border-sky-500 focus:outline-none" placeholder="Description (min 50 chars)" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
               
-              <div className="cursor-pointer rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 text-center transition-all hover:border-sky-500" onClick={() => document.getElementById('product-images')?.click()}>
+              {editProduct && existingImages.length > 0 && (
+                <div>
+                  <p className="mb-2 text-sm font-medium text-gray-300">Current images</p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {existingImages.map((imageUrl) => (
+                      <div key={imageUrl} className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                        <img src={imageUrl} alt="" className="h-28 w-full object-cover" />
+                        <button
+                          type="button"
+                          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-all hover:bg-red-600"
+                          onClick={() => removeExistingImage(imageUrl)}
+                          aria-label="Remove image"
+                        >
+                          <i className="ti ti-x" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div
+                className="cursor-pointer rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 text-center transition-all hover:border-sky-500"
+                onClick={() => document.getElementById('product-images')?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  addImageFiles(e.dataTransfer.files)
+                }}
+              >
                 <i className="ti ti-cloud-upload mb-2 text-3xl text-gray-400" />
                 <p className="text-sm text-gray-400">Drag images here or click to browse</p>
-                <input id="product-images" type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(e) => setImages([...e.target.files])} />
+                <input
+                  id="product-images"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    addImageFiles(e.target.files)
+                    e.target.value = ''
+                  }}
+                />
               </div>
-              {images.length > 0 && <p className="text-sm text-sky-400">{images.length} file(s) selected</p>}
+              {images.length > 0 && (
+                <div>
+                  <p className="mb-2 text-sm font-medium text-sky-400">{images.length} new file(s) selected</p>
+                  <div className="space-y-2">
+                    {images.map((file, index) => (
+                      <div key={`${file.name}-${file.lastModified}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-gray-200">{file.name}</p>
+                          <p className="text-xs text-gray-500">{Math.max(file.size / 1024 / 1024, 0.01).toFixed(2)} MB</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-red-400 transition-all hover:bg-red-500/10 hover:text-red-300"
+                          onClick={() => removeSelectedImage(index)}
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          <i className="ti ti-trash" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="mt-6 flex justify-end gap-3">

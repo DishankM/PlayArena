@@ -1,16 +1,26 @@
 // client/src/components/products/ProductListRow.jsx
 
-import { useDispatch } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Link, useNavigate } from 'react-router-dom'
 import { addToCart } from '../../store/slices/cartSlice'
+import { setCredentials } from '../../store/slices/authSlice'
+import { authAPI } from '../../services/api'
 import { calculateNXL, formatPrice } from '../../utils/helpers'
+import { isInWishlist } from '../../utils/wishlist'
 import { StarRating } from '../common/StarRating'
+import useToast from '../../hooks/useToast'
 
 export const ProductListRow = ({ product }) => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const toast = useToast()
+  const { isAuthenticated, user, token } = useSelector((state) => state.auth)
   const { _id, name, slug, category, price, originalPrice, images, ratings, stock = 10 } = product
   const nxlEarn = calculateNXL(price)
   const isOutOfStock = stock === 0
+  const isWishlisted = isInWishlist(user?.wishlist, _id)
+  const [wishlistSaving, setWishlistSaving] = useState(false)
 
   const handleAddToCart = () => {
     dispatch(addToCart({
@@ -18,6 +28,25 @@ export const ProductListRow = ({ product }) => {
       image: images?.[0] || '',
       quantity: 1,
     }))
+  }
+
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to save items')
+      navigate('/login')
+      return
+    }
+
+    setWishlistSaving(true)
+    try {
+      const res = await authAPI.patch(`/wishlist/${_id}`)
+      dispatch(setCredentials({ user: res.data.data.user, token }))
+      toast.success(res.data.message)
+    } catch (error) {
+      toast.error(error.message || 'Could not update wishlist')
+    } finally {
+      setWishlistSaving(false)
+    }
   }
 
   return (
@@ -59,6 +88,16 @@ export const ProductListRow = ({ product }) => {
             )}
           </div>
           <button
+            type="button"
+            onClick={handleToggleWishlist}
+            disabled={wishlistSaving}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-gray-300 transition-all hover:border-red-400 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <i className={`ti ti-heart text-lg ${isWishlisted ? 'text-red-500' : ''}`} />
+          </button>
+          <button
+            type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50"

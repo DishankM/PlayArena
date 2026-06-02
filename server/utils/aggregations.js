@@ -1,4 +1,3 @@
-// server/utils/aggregations.js
 
 export const revenueByDayPipeline = (days = 7) => {
   const startDate = new Date()
