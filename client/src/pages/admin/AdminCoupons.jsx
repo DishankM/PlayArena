@@ -87,7 +87,7 @@ export default function AdminCoupons() {
         </div>
         <button 
           type="button" 
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2.5 font-semibold text-white transition-all hover:scale-105"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2.5 font-semibold text-white transition-all md:hover:scale-105 sm:w-auto"
           onClick={() => setModalOpen(true)}
         >
           <i className="ti ti-plus" /> Create Coupon
@@ -206,7 +206,7 @@ export default function AdminCoupons() {
       {/* Create Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <form onSubmit={handleCreate} className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0B1020] p-6 shadow-2xl">
+          <form onSubmit={handleCreate} className="w-full max-w-md rounded-xl border border-white/10 bg-[#0B1020] p-4 shadow-2xl sm:rounded-2xl sm:p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-white">Create Coupon</h3>
               <button type="button" className="text-gray-400 hover:text-white" onClick={() => setModalOpen(false)}>
@@ -223,7 +223,7 @@ export default function AdminCoupons() {
                 onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
               />
               
-              <div className="flex gap-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 {['percent', 'flat'].map((t) => (
                   <button
                     key={t}
@@ -280,11 +280,11 @@ export default function AdminCoupons() {
               )}
             </div>
             
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" className="rounded-xl border border-white/20 bg-white/5 px-5 py-2 text-sm text-gray-300 hover:bg-white/10" onClick={() => setModalOpen(false)}>
                 Cancel
               </button>
-              <button type="submit" className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50" disabled={saving}>
+              <button type="submit" className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white transition-all md:hover:scale-105 disabled:opacity-50" disabled={saving}>
                 {saving ? <i className="ti ti-loader animate-spin" /> : 'Create'}
               </button>
             </div>

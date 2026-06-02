@@ -1,5 +1,3 @@
-// client/src/components/common/Navbar.jsx
-
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';

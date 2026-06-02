@@ -165,7 +165,7 @@ export default function AdminTournaments() {
         </div>
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2.5 font-semibold text-white transition-all hover:scale-105"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2.5 font-semibold text-white transition-all md:hover:scale-105 sm:w-auto"
           onClick={() => {
             setEditItem(null)
             setForm(emptyForm)
@@ -177,12 +177,12 @@ export default function AdminTournaments() {
       </div>
 
       {/* Status Tabs */}
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {STATUS_TABS.map((s) => (
           <button
             key={s}
             type="button"
-            className={`rounded-xl px-4 py-2 text-sm font-medium capitalize transition-all ${
+            className={`shrink-0 rounded-xl px-4 py-2 text-sm font-medium capitalize transition-all ${
               statusFilter === s 
                 ? 'bg-gradient-to-r from-sky-500 to-violet-500 text-white shadow-lg shadow-sky-500/20' 
                 : 'border border-white/20 bg-white/5 text-gray-300 hover:bg-white/10'
@@ -344,7 +344,7 @@ export default function AdminTournaments() {
       {/* Tournament Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <form onSubmit={handleSave} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1020] p-6 shadow-2xl">
+          <form onSubmit={handleSave} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-[#0B1020] p-4 shadow-2xl sm:rounded-2xl sm:p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-white">{editItem ? 'Edit Tournament' : 'Create Tournament'}</h3>
               <button type="button" className="text-gray-400 hover:text-white" onClick={() => setModalOpen(false)}>
@@ -448,9 +448,9 @@ export default function AdminTournaments() {
               </button>
             </div>
             
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" className="rounded-xl border border-white/20 bg-white/5 px-5 py-2 text-sm text-gray-300 hover:bg-white/10" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button type="submit" className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50" disabled={saving}>
+              <button type="submit" className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white transition-all md:hover:scale-105 disabled:opacity-50" disabled={saving}>
                 {saving ? <i className="ti ti-loader animate-spin" /> : 'Save'}
               </button>
             </div>
@@ -461,8 +461,8 @@ export default function AdminTournaments() {
       {/* Registrations Modal */}
       {regModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1020] p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-white/10 bg-[#0B1020] p-4 shadow-2xl sm:rounded-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-xl font-bold text-white">Registrations — {regModal.name}</h3>
                 <p className="text-sm text-gray-400">Manage player check-ins</p>

@@ -101,28 +101,28 @@ export default function AdminWallet() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 p-6">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 p-4 sm:rounded-2xl sm:p-6">
           <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-amber-500/20 blur-2xl" />
           <p className="text-sm text-gray-300">Total NXL Issued</p>
-          <p className="mt-2 text-3xl font-bold text-amber-400">{issued.toLocaleString('en-IN')}</p>
+          <p className="mt-2 break-words text-2xl font-bold text-amber-400 sm:text-3xl">{issued.toLocaleString('en-IN')}</p>
           <p className="mt-1 text-xs text-gray-400">= {formatPrice(issued)} in value</p>
         </div>
         
-        <div className={`${glassCard} p-6`}>
+        <div className={`${glassCard} p-4 sm:p-6`}>
           <p className="text-sm text-gray-400">Total NXL Redeemed</p>
-          <p className="mt-2 text-3xl font-bold text-white">{redeemed.toLocaleString('en-IN')}</p>
+          <p className="mt-2 break-words text-2xl font-bold text-white sm:text-3xl">{redeemed.toLocaleString('en-IN')}</p>
           <p className="mt-1 text-xs text-gray-400">{redeemPct}% of issued credits</p>
         </div>
         
-        <div className={`${glassCard} p-6`}>
+        <div className={`${glassCard} p-4 sm:p-6`}>
           <p className="text-sm text-gray-400">Outstanding NXL</p>
-          <p className="mt-2 text-3xl font-bold text-sky-400">{outstanding.toLocaleString('en-IN')}</p>
+          <p className="mt-2 break-words text-2xl font-bold text-sky-400 sm:text-3xl">{outstanding.toLocaleString('en-IN')}</p>
           <p className="mt-1 text-xs text-gray-400">Est. liability: {formatPrice(outstanding)}</p>
         </div>
       </div>
 
       {/* Cashback Rules */}
-      <div className={`${glassCard} p-6`}>
+      <div className={`${glassCard} p-4 sm:p-6`}>
         <h3 className="text-lg font-semibold text-white">Cashback Rules</h3>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
@@ -156,7 +156,7 @@ export default function AdminWallet() {
       </div>
 
       {/* Manual Adjustment */}
-      <div className="rounded-2xl border-l-4 border-l-sky-500 bg-gradient-to-r from-sky-500/10 to-transparent p-6">
+      <div className="rounded-xl border-l-4 border-l-sky-500 bg-gradient-to-r from-sky-500/10 to-transparent p-4 sm:rounded-2xl sm:p-6">
         <h3 className="text-lg font-semibold text-white">Manual NXL Adjustment</h3>
         <p className="mt-1 text-sm text-amber-400">Use with caution. All manual adjustments are logged.</p>
         
@@ -223,7 +223,7 @@ export default function AdminWallet() {
             onChange={(e) => setAdjustForm((f) => ({ ...f, reason: e.target.value }))}
           />
           
-          <button type="submit" className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2.5 font-semibold text-white transition-all hover:scale-105 disabled:opacity-50" disabled={saving || !adjustForm.userId}>
+          <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2.5 font-semibold text-white transition-all md:hover:scale-105 disabled:opacity-50 sm:w-auto" disabled={saving || !adjustForm.userId}>
             {saving ? <i className="ti ti-loader animate-spin" /> : 'Apply Adjustment'}
           </button>
         </form>
@@ -231,13 +231,13 @@ export default function AdminWallet() {
 
       {/* Transactions Table */}
       <div className={`${glassCard} overflow-hidden`}>
-        <div className="flex flex-wrap gap-2 border-b border-white/10 p-4">
-          <select className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-gray-300 focus:border-sky-500 focus:outline-none" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+        <div className="flex flex-col gap-2 border-b border-white/10 p-4 sm:flex-row sm:flex-wrap">
+          <select className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-gray-300 focus:border-sky-500 focus:outline-none sm:w-auto" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
             <option value="">All types</option>
             <option value="credit">Credit</option>
             <option value="debit">Debit</option>
           </select>
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative min-w-0 flex-1 sm:min-w-[200px]">
             <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               className="w-full rounded-xl border border-white/20 bg-white/5 pl-10 pr-4 py-2 text-gray-300 placeholder-gray-400 focus:border-sky-500 focus:outline-none"
@@ -249,7 +249,7 @@ export default function AdminWallet() {
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="border-b border-white/10 bg-white/5 text-xs text-gray-400">
               <tr>
                 <th className="px-4 py-3 text-left">Date</th>

@@ -73,8 +73,8 @@ export default function AdminUsers() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="relative min-w-0 flex-1 sm:min-w-[200px]">
           <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             className="w-full rounded-xl border border-white/20 bg-white/5 pl-10 pr-4 py-2.5 text-gray-300 placeholder-gray-400 focus:border-sky-500 focus:outline-none"
@@ -83,12 +83,12 @@ export default function AdminUsers() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <select className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-gray-300 focus:border-sky-500 focus:outline-none" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+        <select className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-gray-300 focus:border-sky-500 focus:outline-none sm:w-auto" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
           <option value="all">All roles</option>
           <option value="user">Users</option>
           <option value="admin">Admins</option>
         </select>
-        <select className="rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-gray-300 focus:border-sky-500 focus:outline-none" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+        <select className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-gray-300 focus:border-sky-500 focus:outline-none sm:w-auto" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="all">All status</option>
           <option value="active">Active</option>
           <option value="blocked">Blocked</option>
@@ -207,13 +207,13 @@ export default function AdminUsers() {
       {/* User Detail Modal */}
       {selected && detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1020] p-6 shadow-2xl">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-[#0B1020] p-4 shadow-2xl sm:rounded-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-violet-500 text-xl font-bold text-white shadow-lg">
                   {getInitials(detail.user.name)}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-xl font-bold text-white">{detail.user.name}</h3>
                   <p className="text-sm text-gray-400">{detail.user.email}</p>
                   <span className="mt-1 inline-block rounded-full bg-sky-500/20 px-2 py-0.5 text-xs capitalize text-sky-400">{detail.user.role}</span>

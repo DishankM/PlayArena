@@ -176,11 +176,11 @@ export default function AdminProducts() {
             <p className="text-sm text-gray-400">{totalCount} total products</p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="relative">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+          <div className="relative w-full sm:w-auto">
             <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              className="rounded-xl border border-white/20 bg-white/5 pl-10 pr-4 py-2 text-gray-300 placeholder-gray-400 focus:border-sky-500 focus:outline-none"
+              className="w-full rounded-xl border border-white/20 bg-white/5 pl-10 pr-4 py-2 text-gray-300 placeholder-gray-400 focus:border-sky-500 focus:outline-none sm:w-auto"
               placeholder="Search products..."
               value={search}
               onChange={(e) => {
@@ -190,7 +190,7 @@ export default function AdminProducts() {
             />
           </div>
           <select
-            className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-gray-300 focus:border-sky-500 focus:outline-none"
+            className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-gray-300 focus:border-sky-500 focus:outline-none sm:w-auto"
             value={categoryFilter}
             onChange={(e) => {
               setCategoryFilter(e.target.value)
@@ -202,7 +202,7 @@ export default function AdminProducts() {
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          <button type="button" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 font-semibold text-white transition-all hover:scale-105" onClick={openAdd}>
+          <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 font-semibold text-white transition-all md:hover:scale-105 sm:w-auto" onClick={openAdd}>
             <i className="ti ti-plus" /> Add Product
           </button>
         </div>
@@ -344,7 +344,7 @@ export default function AdminProducts() {
       {/* Product Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <form onSubmit={handleSave} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1020] p-6 shadow-2xl">
+          <form onSubmit={handleSave} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-[#0B1020] p-4 shadow-2xl sm:rounded-2xl sm:p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-white">{editProduct ? `Edit - ${editProduct.name}` : 'Add Product'}</h3>
               <button type="button" className="text-gray-400 hover:text-white" onClick={() => setModalOpen(false)}>
@@ -455,9 +455,9 @@ export default function AdminProducts() {
               )}
             </div>
             
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" className="rounded-xl border border-white/20 bg-white/5 px-5 py-2 text-sm text-gray-300 hover:bg-white/10" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button type="submit" className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50" disabled={saving}>
+              <button type="submit" className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 text-sm font-semibold text-white transition-all md:hover:scale-105 disabled:opacity-50" disabled={saving}>
                 {saving ? <i className="ti ti-loader animate-spin" /> : 'Save Product'}
               </button>
             </div>

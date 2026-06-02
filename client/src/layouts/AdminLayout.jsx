@@ -136,7 +136,7 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0B1020]">
+    <div className="flex min-h-screen overflow-x-hidden bg-[#0B1020]">
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/10 bg-[#0B1020] lg:flex">
         <SidebarContent onSignOut={handleSignOut} />
@@ -151,7 +151,7 @@ export default function AdminLayout() {
             aria-label="Close menu"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="relative flex h-full w-64 flex-col border-r border-white/10 bg-[#0B1020] shadow-2xl">
+          <aside className="relative flex h-dvh w-[min(18rem,calc(100vw-1rem))] flex-col overflow-y-auto border-r border-white/10 bg-[#0B1020] shadow-2xl">
             <SidebarContent
               onNavigate={() => setSidebarOpen(false)}
               onSignOut={handleSignOut}
@@ -161,10 +161,10 @@ export default function AdminLayout() {
       )}
 
       {/* Main Content */}
-      <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-64">
         {/* Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#0B1020]/95 px-4 py-3 backdrop-blur-lg md:px-6">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-white/10 bg-[#0B1020]/95 px-3 py-3 backdrop-blur-lg sm:px-4 md:px-6">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               type="button"
               className="rounded-xl p-2 text-gray-400 transition-all hover:bg-white/10 hover:text-white lg:hidden"
@@ -173,15 +173,15 @@ export default function AdminLayout() {
             >
               <i className="ti ti-menu-2 text-xl" />
             </button>
-            <div>
-              <h1 className="text-xl font-bold text-white">{pageTitle}</h1>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-bold text-white sm:text-xl">{pageTitle}</h1>
               <p className="text-xs text-gray-400 hidden sm:block">
                 Manage your PlayArena platform
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             {/* Notifications */}
             <Link
               to="/admin/orders"
@@ -197,7 +197,7 @@ export default function AdminLayout() {
             </Link>
             
             {/* User Info */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-violet-500 text-sm font-bold text-white shadow-lg">
                 {getInitials(user?.name)}
               </div>
@@ -223,7 +223,7 @@ export default function AdminLayout() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="min-w-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 md:p-6">
           <Outlet />
         </main>
       </div>

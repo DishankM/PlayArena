@@ -101,12 +101,12 @@ export default function AdminOrders() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {STATUSES.map((s) => (
           <button
             key={s}
             type="button"
-            className={`rounded-xl px-4 py-2 text-sm font-medium capitalize transition-all ${
+            className={`shrink-0 rounded-xl px-4 py-2 text-sm font-medium capitalize transition-all ${
               statusFilter === s 
                 ? 'bg-gradient-to-r from-sky-500 to-violet-500 text-white shadow-lg shadow-sky-500/20' 
                 : 'border border-white/20 bg-white/5 text-gray-300 hover:bg-white/10'
@@ -122,20 +122,20 @@ export default function AdminOrders() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <input 
           type="date" 
-          className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-gray-300 focus:border-sky-500 focus:outline-none" 
+          className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-gray-300 focus:border-sky-500 focus:outline-none sm:w-auto" 
           value={dateFrom} 
           onChange={(e) => setDateFrom(e.target.value)} 
         />
         <input 
           type="date" 
-          className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-gray-300 focus:border-sky-500 focus:outline-none" 
+          className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-gray-300 focus:border-sky-500 focus:outline-none sm:w-auto" 
           value={dateTo} 
           onChange={(e) => setDateTo(e.target.value)} 
         />
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative min-w-0 flex-1 sm:min-w-[200px]">
           <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             className="w-full rounded-xl border border-white/20 bg-white/5 pl-10 pr-4 py-2 text-gray-300 placeholder-gray-400 focus:border-sky-500 focus:outline-none"
@@ -146,7 +146,7 @@ export default function AdminOrders() {
         </div>
         <button 
           type="button" 
-          className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm text-gray-300 transition-all hover:bg-white/10"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm text-gray-300 transition-all hover:bg-white/10 sm:w-auto"
           onClick={exportCsv}
         >
           <i className="ti ti-download" /> Export CSV
@@ -309,7 +309,7 @@ export default function AdminOrders() {
       {/* Order Detail Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1020] p-6 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-[#0B1020] p-4 shadow-2xl sm:rounded-2xl sm:p-6">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-xl font-bold text-white">Order #{String(selectedOrder._id).slice(-8)}</h3>
@@ -341,7 +341,8 @@ export default function AdminOrders() {
             </div>
             
             {/* Order Items */}
-            <table className="mt-4 w-full text-sm">
+            <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[480px] text-sm">
               <thead className="text-xs text-gray-400">
                 <tr className="border-b border-white/10">
                   <th className="py-2 text-left">Product</th>
@@ -361,6 +362,7 @@ export default function AdminOrders() {
                 ))}
               </tbody>
             </table>
+            </div>
             
             {/* Totals */}
             <div className="mt-4 space-y-1 text-sm">

@@ -81,7 +81,7 @@ export default function AdminAnalytics() {
   return (
     <div className="space-y-6">
       {/* Date Range Filter */}
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {[
           { label: 'Last 7 days', value: 7 },
           { label: 'Last 30 days', value: 30 },
@@ -91,7 +91,7 @@ export default function AdminAnalytics() {
           <button
             key={preset.value}
             type="button"
-            className={`rounded-xl px-5 py-2.5 text-sm font-medium transition-all ${
+            className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-medium transition-all sm:px-5 ${
               days === preset.value 
                 ? 'bg-gradient-to-r from-sky-500 to-violet-500 text-white shadow-lg shadow-sky-500/20' 
                 : 'border border-white/20 bg-white/5 text-gray-300 hover:bg-white/10'
@@ -104,15 +104,15 @@ export default function AdminAnalytics() {
       </div>
 
       {/* Revenue Chart */}
-      <div className={`${glassCard} p-5`}>
+      <div className={`${glassCard} p-4 sm:p-5`}>
         <div className="flex items-center gap-2 mb-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20">
             <i className="ti ti-chart-line text-sky-400" />
           </div>
-          <h3 className="text-lg font-semibold text-white">Revenue over time</h3>
+          <h3 className="text-base font-semibold text-white sm:text-lg">Revenue over time</h3>
         </div>
-        <div className="mt-4 h-80">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="mt-4 h-72 overflow-x-auto sm:h-80">
+          <ResponsiveContainer width="100%" minWidth={420} height="100%">
             <AreaChart data={revenueData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
@@ -152,15 +152,15 @@ export default function AdminAnalytics() {
       {/* Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Orders by Status */}
-        <div className={`${glassCard} p-5`}>
+        <div className={`${glassCard} p-4 sm:p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20">
               <i className="ti ti-shopping-bag text-violet-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Orders by status</h3>
+            <h3 className="text-base font-semibold text-white sm:text-lg">Orders by status</h3>
           </div>
-          <div className="mt-4 h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="mt-4 h-64 overflow-x-auto sm:h-72">
+            <ResponsiveContainer width="100%" minWidth={360} height="100%">
               <BarChart data={charts.ordersByStatus || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
                 <XAxis dataKey="status" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
@@ -187,15 +187,15 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Sport Registrations */}
-        <div className={`${glassCard} p-5`}>
+        <div className={`${glassCard} p-4 sm:p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20">
               <i className="ti ti-trophy text-emerald-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Sport registrations</h3>
+            <h3 className="text-base font-semibold text-white sm:text-lg">Sport registrations</h3>
           </div>
-          <div className="mt-4 h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="mt-4 h-64 overflow-x-auto sm:h-72">
+            <ResponsiveContainer width="100%" minWidth={360} height="100%">
               <BarChart data={charts.sportStats || []} layout="vertical">
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
                 <YAxis type="category" dataKey="sport" width={90} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
@@ -216,12 +216,12 @@ export default function AdminAnalytics() {
 
       {/* Category Performance Radar */}
       {radarData.length > 0 && (
-        <div className={`${glassCard} p-5`}>
+        <div className={`${glassCard} p-4 sm:p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20">
               <i className="ti ti-chart-pie text-amber-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Category performance</h3>
+            <h3 className="text-base font-semibold text-white sm:text-lg">Category performance</h3>
           </div>
           <div className="mt-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -258,15 +258,15 @@ export default function AdminAnalytics() {
       )}
 
       {/* NXL Credits Flow */}
-      <div className={`${glassCard} p-5`}>
+      <div className={`${glassCard} p-4 sm:p-5`}>
         <div className="flex items-center gap-2 mb-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20">
             <i className="ti ti-coin text-amber-400" />
           </div>
-          <h3 className="text-lg font-semibold text-white">NXL credits flow</h3>
+          <h3 className="text-base font-semibold text-white sm:text-lg">NXL credits flow</h3>
         </div>
-        <div className="mt-4 h-72">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="mt-4 h-64 overflow-x-auto sm:h-72">
+          <ResponsiveContainer width="100%" minWidth={420} height="100%">
             <LineChart data={nxlLineData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
@@ -300,15 +300,15 @@ export default function AdminAnalytics() {
       </div>
 
       {/* User Growth */}
-      <div className={`${glassCard} p-5`}>
+      <div className={`${glassCard} p-4 sm:p-5`}>
         <div className="flex items-center gap-2 mb-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
             <i className="ti ti-users text-blue-400" />
           </div>
-          <h3 className="text-lg font-semibold text-white">User growth</h3>
+          <h3 className="text-base font-semibold text-white sm:text-lg">User growth</h3>
         </div>
-        <div className="mt-4 h-72">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="mt-4 h-64 overflow-x-auto sm:h-72">
+          <ResponsiveContainer width="100%" minWidth={420} height="100%">
             <AreaChart data={charts.userGrowth || []}>
               <defs>
                 <linearGradient id="userGrowthGradient" x1="0" y1="0" x2="0" y2="1">
@@ -342,7 +342,7 @@ export default function AdminAnalytics() {
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className={`${glassCard} p-4 transition-all hover:scale-105`}>
+          <div key={kpi.label} className={`${glassCard} p-4 transition-all md:hover:scale-105`}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-2xl font-bold text-white">{kpi.value}</p>

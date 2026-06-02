@@ -142,7 +142,7 @@ export default function AdminQRScanner() {
         ))}
       </select>
 
-      <div className={`${glassCard} relative mx-auto aspect-square w-full max-w-md overflow-hidden p-4`}>
+      <div className={`${glassCard} relative mx-auto aspect-square w-full max-w-md overflow-hidden p-3 sm:p-4`}>
         <div id="qr-reader" className="h-full w-full" />
         {!scanning && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
@@ -208,18 +208,18 @@ export default function AdminQRScanner() {
         </div>
       )}
 
-      <div className={`${glassCard} p-5`}>
+      <div className={`${glassCard} p-4 sm:p-5`}>
         <p className="text-sm font-medium text-gray-300">Or enter QR token manually</p>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <input
-            className="flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 font-mono text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none"
+            className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 font-mono text-white placeholder-gray-400 focus:border-sky-500 focus:outline-none"
             value={manualToken}
             onChange={(e) => setManualToken(e.target.value)}
             placeholder="PA-..."
           />
           <button
             type="button"
-            className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 font-semibold text-white transition-all hover:scale-105 disabled:opacity-50"
+            className="rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-2 font-semibold text-white transition-all md:hover:scale-105 disabled:opacity-50"
             onClick={() => processToken(manualToken)}
             disabled={processing}
           >
@@ -232,7 +232,7 @@ export default function AdminQRScanner() {
         <div className={`${glassCard} overflow-hidden`}>
           <h3 className="border-b border-white/10 px-5 py-3 text-sm font-semibold text-white">Recent scans (session)</h3>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-white/5 text-xs text-gray-400">
                 <tr>
                   <th className="px-4 py-2 text-left">Time</th>
