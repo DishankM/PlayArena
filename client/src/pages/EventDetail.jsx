@@ -182,7 +182,7 @@ export default function EventDetail() {
       <Navbar />
 
       {/* HERO */}
-      <section className="relative min-h-[540px] overflow-hidden">
+      <section className="relative min-h-[460px] overflow-hidden sm:min-h-[540px]">
         {/* Background */}
         <div className="absolute inset-0">
           {poster && (
@@ -201,7 +201,7 @@ export default function EventDetail() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#0B1020] to-transparent" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-6 py-20 lg:px-12 lg:py-28">
+        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-20 lg:px-12 lg:py-28">
           <div className="flex flex-col gap-10 xl:flex-row xl:items-start xl:justify-between">
             {/* LEFT */}
             <div className="max-w-3xl">
@@ -223,12 +223,12 @@ export default function EventDetail() {
               </div>
 
               {/* title */}
-              <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+              <h1 className="mt-6 text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">
                 {name}
               </h1>
 
               {/* info */}
-              <div className="mt-6 flex flex-wrap gap-5 text-sm text-gray-300">
+              <div className="mt-6 flex flex-col gap-3 text-sm text-gray-300 sm:flex-row sm:flex-wrap sm:gap-5">
                 <span className="flex items-center gap-2">
                   <i className={`ti ${icon} text-sky-400`} />
                   {sport}
@@ -291,11 +291,11 @@ export default function EventDetail() {
               )}
 
               {/* actions */}
-              <div className="mt-8 flex flex-wrap gap-4">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
                 {canRegister && (
                   <Link
                     to={`/events/${_id}/register`}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-violet-500 px-8 py-4 font-semibold text-white transition-all hover:scale-[1.02] hover:shadow-2xl"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 px-8 py-4 font-semibold text-white transition-all hover:scale-[1.02] hover:shadow-2xl sm:w-auto sm:rounded-2xl"
                   >
                     <i className="ti ti-calendar-plus" />
                     Register Now
@@ -304,7 +304,7 @@ export default function EventDetail() {
 
                 <button
                   onClick={handleShare}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 font-semibold text-white transition-all hover:bg-white/10"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-4 font-semibold text-white transition-all hover:bg-white/10 sm:w-auto sm:rounded-2xl"
                 >
                   <i className="ti ti-share" />
                   Share
@@ -314,7 +314,7 @@ export default function EventDetail() {
 
             {/* RIGHT CARD - Not sticky in hero */}
             <div
-              className={`${glassCard} w-full max-w-sm p-6 backdrop-blur-md`}
+              className={`${glassCard} w-full max-w-sm p-5 backdrop-blur-md sm:p-6`}
             >
               <div className="text-center">
                 <p className="text-sm text-gray-400">
@@ -355,9 +355,9 @@ export default function EventDetail() {
       </section>
 
       {/* MAIN */}
-      <main className="mx-auto max-w-7xl px-6 py-14 lg:px-12">
+      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-12">
         {/* tabs */}
-        <div className="mb-10 overflow-x-auto border-b border-white/10">
+        <div className="mb-8 overflow-x-auto border-b border-white/10 sm:mb-10">
           <div className="flex min-w-max gap-3">
             {['details', 'schedule', 'venue', 'faq'].map(
               (tab) => (
@@ -384,8 +384,8 @@ export default function EventDetail() {
             {/* DETAILS */}
             {activeTab === 'details' && (
               <>
-                <div className={`${glassCard} p-8`}>
-                  <h2 className="text-2xl font-bold">
+                <div className={`${glassCard} p-5 sm:p-8`}>
+                  <h2 className="text-xl font-bold sm:text-2xl">
                     About Tournament
                   </h2>
 
@@ -394,8 +394,8 @@ export default function EventDetail() {
                   </p>
                 </div>
 
-                <div className={`${glassCard} p-8`}>
-                  <h2 className="text-2xl font-bold">
+                <div className={`${glassCard} p-5 sm:p-8`}>
+                  <h2 className="text-xl font-bold sm:text-2xl">
                     Rules & Regulations
                   </h2>
 
@@ -403,7 +403,7 @@ export default function EventDetail() {
                     {rules?.map((rule, index) => (
                       <div
                         key={index}
-                        className="flex gap-3 rounded-2xl bg-white/[0.03] p-4"
+                        className="flex gap-3 rounded-xl bg-white/[0.03] p-4 sm:rounded-2xl"
                       >
                         <i className="ti ti-check text-sky-400" />
 
@@ -419,8 +419,8 @@ export default function EventDetail() {
 
             {/* schedule */}
             {activeTab === 'schedule' && (
-              <div className={`${glassCard} p-8`}>
-                <h2 className="text-2xl font-bold">
+              <div className={`${glassCard} p-5 sm:p-8`}>
+                <h2 className="text-xl font-bold sm:text-2xl">
                   Event Schedule
                 </h2>
 
@@ -428,7 +428,7 @@ export default function EventDetail() {
                   {mockSchedule.map((s) => (
                     <div
                       key={s.time}
-                      className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+                      className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:gap-4 sm:rounded-2xl sm:p-5"
                     >
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/10">
                         <i
@@ -453,12 +453,12 @@ export default function EventDetail() {
 
             {/* venue */}
             {activeTab === 'venue' && (
-              <div className={`${glassCard} p-8`}>
-                <h2 className="text-2xl font-bold">
+              <div className={`${glassCard} p-5 sm:p-8`}>
+                <h2 className="text-xl font-bold sm:text-2xl">
                   Venue Information
                 </h2>
 
-                <div className="mt-6 rounded-3xl bg-white/[0.03] p-6">
+                <div className="mt-6 rounded-xl bg-white/[0.03] p-4 sm:rounded-3xl sm:p-6">
                   <div className="flex items-center gap-3">
                     <i className="ti ti-map-pin text-2xl text-sky-400" />
 
@@ -490,8 +490,8 @@ export default function EventDetail() {
 
             {/* faq */}
             {activeTab === 'faq' && (
-              <div className={`${glassCard} p-8`}>
-                <h2 className="text-2xl font-bold">
+              <div className={`${glassCard} p-5 sm:p-8`}>
+                <h2 className="text-xl font-bold sm:text-2xl">
                   Frequently Asked Questions
                 </h2>
 
@@ -499,7 +499,7 @@ export default function EventDetail() {
                   {faqs.map((faq, i) => (
                     <div
                       key={i}
-                      className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+                      className="rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:rounded-2xl sm:p-5"
                     >
                       <p className="font-semibold text-sky-400">
                         {faq.q}
@@ -520,7 +520,7 @@ export default function EventDetail() {
             {/* Registration Card - Sticky */}
             <div className="lg:sticky lg:top-24">
               <div
-                className={`${glassCard} overflow-hidden p-6 backdrop-blur-md`}
+                className={`${glassCard} overflow-hidden p-5 backdrop-blur-md sm:p-6`}
               >
                 <div className="text-center">
                   <p className="text-sm text-gray-400">
@@ -567,7 +567,7 @@ export default function EventDetail() {
                 {canRegister ? (
                   <Link
                     to={`/events/${_id}/register`}
-                    className="mt-8 block rounded-2xl bg-gradient-to-r from-sky-500 to-violet-500 py-4 text-center font-semibold transition-all hover:scale-[1.01] hover:shadow-xl"
+                    className="mt-8 block rounded-xl bg-gradient-to-r from-sky-500 to-violet-500 py-4 text-center font-semibold transition-all hover:scale-[1.01] hover:shadow-xl sm:rounded-2xl"
                   >
                     Register Now
                   </Link>
@@ -604,7 +604,7 @@ export default function EventDetail() {
             </div>
 
             {/* Similar Events - NOT STICKY (scrolls naturally) */}
-            <div className={`${glassCard} mt-6 p-6`}>
+            <div className={`${glassCard} mt-6 p-5 sm:p-6`}>
               <h3 className="text-lg font-bold">
                 Similar Events
               </h3>
@@ -615,7 +615,7 @@ export default function EventDetail() {
                     <Link
                       key={event._id}
                       to={`/events/${event._id}`}
-                      className="flex items-center justify-between rounded-2xl bg-white/[0.03] p-4 transition-all hover:bg-white/[0.05] hover:translate-x-1"
+                      className="flex items-center justify-between gap-3 rounded-xl bg-white/[0.03] p-4 transition-all hover:bg-white/[0.05] hover:translate-x-1 sm:rounded-2xl"
                     >
                       <div>
                         <p className="font-medium">
@@ -639,7 +639,7 @@ export default function EventDetail() {
             </div>
 
             {/* tip */}
-            <div className="mt-6 rounded-3xl border border-amber-500/20 bg-amber-500/5 p-6">
+            <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 sm:rounded-3xl sm:p-6">
               <div className="flex gap-4">
                 <i className="ti ti-bulb text-2xl text-amber-400" />
 

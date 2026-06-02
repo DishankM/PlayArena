@@ -68,7 +68,7 @@ export const EventCard = ({ tournament }) => {
 
   return (
     <article
-      className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-arena-primary/50 hover:shadow-2xl hover:shadow-arena-primary/20"
+      className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm transition-all duration-300 hover:border-arena-primary/50 hover:shadow-2xl hover:shadow-arena-primary/20 md:hover:scale-105"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -100,7 +100,7 @@ export const EventCard = ({ tournament }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-arena-navy via-arena-navy/60 to-transparent" />
 
         {/* Badges Container - Top Left */}
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+        <div className="absolute left-2 right-2 top-2 flex flex-wrap gap-1.5 sm:left-3 sm:right-3 sm:top-3">
           <span className={`rounded-full bg-gradient-to-r ${statusBadge.color} px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow-lg`}>
             <span className="flex items-center gap-1">
               <i className={`ti ${statusBadge.icon} text-[8px]`} />
@@ -121,7 +121,7 @@ export const EventCard = ({ tournament }) => {
 
         {/* Prize Pool Badge - Top Right */}
         {prizePool && prizePool > 0 && (
-          <div className="absolute right-3 top-3 rounded-full bg-gradient-to-r from-arena-gold/90 to-arena-gold px-2.5 py-1 backdrop-blur-sm">
+          <div className="absolute bottom-3 right-3 rounded-full bg-gradient-to-r from-arena-gold/90 to-arena-gold px-2.5 py-1 backdrop-blur-sm sm:top-3 sm:bottom-auto">
             <div className="flex items-center gap-1">
               <i className="ti ti-trophy text-arena-navy text-xs" />
               <span className="text-xs font-bold text-arena-navy">

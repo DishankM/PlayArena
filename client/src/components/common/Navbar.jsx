@@ -104,10 +104,10 @@ export const Navbar = () => {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 border-b border-white/10 bg-arena-navy/95 shadow-lg backdrop-blur-lg transition-all duration-300 ${
         scrolled 
-          ? 'bg-arena-navy/95 border-b border-white/10 backdrop-blur-lg shadow-lg' 
-          : 'bg-arena-navy'
+          ? 'shadow-xl' 
+          : 'shadow-md'
       }`}
     >
       <nav
@@ -118,9 +118,9 @@ export const Navbar = () => {
         {/* Logo */}
         <Link 
           to="/" 
-          className="flex items-center gap-0.5 text-xl font-bold tracking-tight transition-all hover:scale-105"
+          className="flex min-w-0 items-center gap-0.5 text-xl font-bold tracking-tight transition-all hover:scale-105"
         >
-          <img src={logo} alt="Arena Logo" className="h-12 w-40" />
+          <img src={logo} alt="Arena Logo" className="h-10 w-32 object-contain sm:h-12 sm:w-40" />
         </Link>
 
         {/* Desktop Navigation Links */}
@@ -350,12 +350,12 @@ export const Navbar = () => {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden"
             onClick={handleToggleMobile}
           />
           
           {/* Mobile Menu Panel */}
-          <div className="fixed right-0 top-0 z-50 h-full w-80 bg-gradient-to-b from-arena-navy to-arena-navy-deep shadow-2xl md:hidden animate-slide-in-right">
+          <div className="fixed right-0 top-0 z-[70] h-dvh w-[min(20rem,calc(100vw-1rem))] overflow-y-auto border-l border-white/10 bg-arena-navy shadow-2xl md:hidden animate-slide-in-right">
             {/* Mobile Menu Header */}
             <div className="flex items-center justify-between border-b border-white/10 p-4">
               <Link to="/" className="flex items-center gap-0.5 text-xl font-bold" onClick={handleToggleMobile}>

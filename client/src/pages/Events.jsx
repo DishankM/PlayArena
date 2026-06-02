@@ -43,7 +43,7 @@ export default function Events() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sort, setSort] = useState('date');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
-  const [isFiltersVisible, setIsFiltersVisible] = useState(true);
+  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -91,7 +91,7 @@ export default function Events() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-arena-navy to-arena-navy-deep px-6 py-16 md:px-16">
+      <section className="relative overflow-hidden bg-gradient-to-r from-arena-navy to-arena-navy-deep px-4 py-10 sm:px-6 sm:py-14 md:px-16 md:py-16">
         {/* Background Elements */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-arena-primary/10 blur-3xl" />
@@ -100,14 +100,14 @@ export default function Events() {
 
         <div className="relative mx-auto max-w-7xl">
           <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-            <div>
+            <div className="w-full min-w-0">
               <div className="inline-flex items-center gap-2 rounded-full border border-arena-primary/30 bg-arena-primary/10 px-4 py-1.5 backdrop-blur-sm mb-4">
                 <i className="ti ti-trophy text-arena-primary text-sm" />
                 <span className="text-xs font-bold uppercase tracking-wider text-arena-primary">
                   Live Events
                 </span>
               </div>
-              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-5xl">
+              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-5xl">
                 Tournaments &amp;{' '}
                 <span className="bg-gradient-to-r from-arena-primary to-arena-gold bg-clip-text text-transparent">
                   Events
@@ -120,7 +120,7 @@ export default function Events() {
             </div>
 
             {/* Results Count */}
-            <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm">
+            <div className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm sm:w-auto">
               <p className="text-sm text-gray-300">
                 <span className="font-bold text-arena-primary">{filtered.length}</span> events found
               </p>
@@ -128,13 +128,13 @@ export default function Events() {
           </div>
 
           {/* Type Tabs */}
-          <div className="mt-8 flex flex-wrap gap-2">
+          <div className="mt-8 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
             {typeTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setTypeFilter(tab.id)}
-                className={`group flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                className={`group flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-all sm:px-5 ${
                   typeFilter === tab.id
                     ? 'bg-gradient-to-r from-arena-primary to-arena-primary-dark text-white shadow-lg shadow-arena-primary/30'
                     : 'border border-white/20 bg-white/5 text-gray-400 backdrop-blur-sm hover:border-arena-primary/50 hover:text-white'
@@ -150,9 +150,9 @@ export default function Events() {
 
       {/* Stats Bar */}
       <div className="border-y border-white/10 bg-white/5 backdrop-blur-sm">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-6 py-6 md:grid-cols-4 md:px-16">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 py-5 min-[420px]:grid-cols-2 md:grid-cols-4 md:px-16 md:py-6">
           {stats.map((s) => (
-            <div key={s.label} className="group flex items-center gap-3 rounded-lg p-3 transition-all hover:bg-white/5">
+            <div key={s.label} className="group flex items-center gap-3 rounded-lg p-2.5 transition-all hover:bg-white/5 sm:p-3">
               <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r ${s.gradient} bg-opacity-20`}>
                 <i className={`ti ${s.icon} text-xl text-white`} aria-hidden="true" />
               </div>
@@ -166,13 +166,13 @@ export default function Events() {
       </div>
 
       {/* Filters Bar */}
-      <div className="sticky top-[72px] z-40 border-b border-white/10 bg-arena-navy/95 backdrop-blur-lg">
-        <div className="mx-auto max-w-7xl px-6 py-4 md:px-16">
-          <div className="flex flex-wrap items-center gap-4">
+      <div className="sticky top-[65px] z-40 border-b border-white/10 bg-arena-navy/95 backdrop-blur-lg sm:top-[73px]">
+        <div className="mx-auto max-w-7xl px-4 py-3 md:px-16 md:py-4">
+          <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-4">
             {/* Filter Toggle for Mobile */}
             <button
               onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-              className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-white md:hidden"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-white md:hidden"
             >
               <i className="ti ti-filter" />
               Filters
@@ -182,13 +182,13 @@ export default function Events() {
             </button>
 
             {/* Sport Pills */}
-            <div className={`flex flex-wrap gap-2 ${isFiltersVisible ? 'flex' : 'hidden md:flex'}`}>
+            <div className={`${isFiltersVisible ? 'flex' : 'hidden md:flex'} -mx-4 gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0`}>
               {sportPills.map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => setSportFilter(p.id)}
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
                     sportFilter === p.id
                       ? 'border-arena-primary bg-arena-primary/10 text-arena-primary'
                       : 'border-white/20 bg-white/5 text-gray-400 hover:border-white/40 hover:text-white'
@@ -201,11 +201,11 @@ export default function Events() {
             </div>
 
             {/* Status Filter */}
-            <div className={`${isFiltersVisible ? 'flex' : 'hidden md:flex'}`}>
+            <div className={`${isFiltersVisible ? 'flex' : 'hidden md:flex'} w-full md:w-auto`}>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:border-arena-primary focus:outline-none"
+                className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-arena-primary focus:outline-none md:w-auto md:py-1.5"
                 aria-label="Filter by status"
               >
                 {statusOptions.map((o) => (
@@ -217,11 +217,11 @@ export default function Events() {
             </div>
 
             {/* Sort Options */}
-            <div className={`ml-auto flex gap-2 ${isFiltersVisible ? 'flex' : 'hidden md:flex'}`}>
+            <div className={`${isFiltersVisible ? 'flex' : 'hidden md:flex'} w-full gap-2 md:ml-auto md:w-auto`}>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:border-arena-primary focus:outline-none"
+                className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white backdrop-blur-sm focus:border-arena-primary focus:outline-none md:w-auto md:py-1.5"
                 aria-label="Sort events"
               >
                 <option value="date">Date (Soonest First)</option>
@@ -293,7 +293,7 @@ export default function Events() {
       </div>
 
       {/* Events Grid */}
-      <main className="mx-auto max-w-7xl px-6 py-12 md:px-16">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-16 md:py-12">
         {loading ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((item) => (
@@ -301,11 +301,11 @@ export default function Events() {
             ))}
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 py-20 text-center">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-16 text-center sm:rounded-2xl sm:py-20">
             <p className="text-red-300">{error}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/5 py-20 text-center backdrop-blur-sm">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-16 text-center backdrop-blur-sm sm:rounded-2xl sm:py-20">
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/5">
               <i className="ti ti-calendar-off text-5xl text-gray-500" />
             </div>
@@ -339,7 +339,7 @@ export default function Events() {
         {/* Load More Section (if applicable) */}
         {filtered.length >= 6 && (
           <div className="mt-12 text-center">
-            <button className="group flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-3 font-semibold text-white transition-all hover:border-arena-primary hover:bg-arena-primary/20">
+            <button className="group mx-auto inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-3 font-semibold text-white transition-all hover:border-arena-primary hover:bg-arena-primary/20">
               <span>Load More Events</span>
               <i className="ti ti-arrow-down transition-transform group-hover:translate-y-1" />
             </button>
@@ -348,11 +348,11 @@ export default function Events() {
       </main>
 
       {/* Newsletter Section */}
-      <section className="mx-auto max-w-7xl px-6 py-12 md:px-16">
-        <div className="overflow-hidden rounded-2xl border border-arena-gold/30 bg-gradient-to-r from-arena-gold/10 via-transparent to-arena-gold/5 p-8 backdrop-blur-sm">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-16 md:py-12">
+        <div className="overflow-hidden rounded-xl border border-arena-gold/30 bg-gradient-to-r from-arena-gold/10 via-transparent to-arena-gold/5 p-5 backdrop-blur-sm sm:rounded-2xl sm:p-8">
           <div className="flex flex-col items-center justify-between gap-6 text-center lg:flex-row lg:text-left">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-arena-gold/20">
+            <div className="flex flex-col items-center gap-4 sm:flex-row lg:items-center">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-arena-gold/20">
                 <i className="ti ti-mail-forward text-arena-gold text-2xl" />
               </div>
               <div>
