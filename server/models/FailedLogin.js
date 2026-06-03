@@ -1,4 +1,3 @@
-// server/models/FailedLogin.js
 import mongoose from 'mongoose'
 
 const failedLoginSchema = new mongoose.Schema(

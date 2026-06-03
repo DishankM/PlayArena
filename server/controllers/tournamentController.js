@@ -23,6 +23,10 @@ const parseRules = (rules) => {
   }
 }
 
+const escapeRegExp = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const queryValue = (value) => (typeof value === 'string' ? value.trim() : '')
+
 const tournamentPayload = (req) => {
   const payload = {
     ...req.body,
@@ -46,11 +50,17 @@ export const getAllTournaments = async (req, res, next) => {
     const page = Math.max(Number(req.query.page) || 1, 1)
     const limit = Math.min(Math.max(Number(req.query.limit) || 12, 1), 48)
     const filter = {}
-    if (sport) filter.sport = sport
-    if (type) filter.type = type
-    if (format) filter.format = format
-    if (status) filter.status = status
-    if (search) filter.name = new RegExp(search, 'i')
+    const sportFilter = queryValue(sport)
+    const typeFilter = queryValue(type).toLowerCase()
+    const formatFilter = queryValue(format).toLowerCase()
+    const statusFilter = queryValue(status).toLowerCase()
+    const searchFilter = queryValue(search)
+
+    if (sportFilter) filter.sport = new RegExp(`^${escapeRegExp(sportFilter)}$`, 'i')
+    if (typeFilter) filter.type = typeFilter
+    if (formatFilter) filter.format = formatFilter
+    if (statusFilter) filter.status = statusFilter
+    if (searchFilter) filter.name = new RegExp(escapeRegExp(searchFilter), 'i')
 
     const [totalCount, tournaments] = await Promise.all([
       Tournament.countDocuments(filter),
